@@ -99,8 +99,6 @@ describe('put change like on post', () => {
 			.put(`/posts-likes/${posts.body.posts?.[0]?._id}`)
 			.set('Authorization', `Bearer ${user2.body.token}`);
 
-		console.log(result);
-
 		expect(result.body).toEqual({
 			post: {
 				_id: result.body.post?._id,
