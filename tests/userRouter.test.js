@@ -407,7 +407,7 @@ describe('PUT update a user', () => {
 	});
 
 	describe('fail', () => {
-		test('wrong name length', async () => {
+		test('wrong name length and remove image after fail', async () => {
 			const user3 = await request(app).post('/session').send({
 				email: 'sad@live.ca',
 				password: 'Dog12345',
@@ -419,6 +419,7 @@ describe('PUT update a user', () => {
 					...sampleUser3,
 					firstName: 'a',
 				})
+				.attach('userImage', './tests/test-image2.jpg')
 				.set('Authorization', `Bearer ${user3.body.token}`);
 
 			expect(result.body).toEqual({

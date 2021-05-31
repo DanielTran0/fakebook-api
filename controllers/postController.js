@@ -10,6 +10,7 @@ const getPostCoreDetails = (postsArray) => {
 	return postsArray.map((post) => post.coreDetails);
 };
 
+// TODO populate comments
 module.exports.getAllPosts = async (req, res, next) => {
 	try {
 		const user = await User.findById(req.user._id, 'friends');
@@ -24,6 +25,7 @@ module.exports.getAllPosts = async (req, res, next) => {
 	}
 };
 
+// TODO populate comments
 module.exports.getPost = async (req, res, next) => {
 	try {
 		const posts = await Post.find({ user: req.params.userId });

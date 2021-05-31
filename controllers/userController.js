@@ -161,8 +161,8 @@ module.exports.putUpdateUser = [
 
 		try {
 			if (!formErrors.isEmpty()) {
-				// if (req.file && fs.existsSync(req.file.path))
-				// 	await fsPromises.unlink(req.file.path);
+				if (req.file && fs.existsSync(req.file.path))
+					await fsPromises.unlink(req.file.path);
 
 				res.status(400);
 				return res.json({ user: req.body, errors: formErrors.array() });
