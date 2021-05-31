@@ -1,7 +1,8 @@
 const User = require('../models/userModel');
 
-const getFriendsCoreDetails = (user) => {
-	return user.friends.map((friend) => ({
+const getFriendsCoreDetails = (friendsArray) => {
+	if (friendsArray.length === 0) return [];
+	return friendsArray.map((friend) => ({
 		user: friend.user.coreDetails,
 		status: friend.status,
 	}));
@@ -14,7 +15,7 @@ module.exports.getUserFriends = async (req, res, next) => {
 			'email firstName lastName profileImage'
 		);
 
-		return res.json({ friends: getFriendsCoreDetails(user) });
+		return res.json({ friends: getFriendsCoreDetails(user.friends) });
 	} catch (error) {
 		return next(error);
 	}
@@ -27,7 +28,13 @@ module.exports.getAnotherUserFriends = async (req, res, next) => {
 			'email firstName lastName profileImage'
 		);
 
-		return res.json({ friends: getFriendsCoreDetails(user) });
+		const userUpdatedFriends = user.friends.filter((friend) => {
+			return friend.status === 'friends';
+		});
+
+		return res.json({
+			friends: getFriendsCoreDetails(userUpdatedFriends),
+		});
 	} catch (error) {
 		return next(error);
 	}
@@ -72,7 +79,7 @@ module.exports.postOutgoingRequest = async (req, res, next) => {
 		).populate('friends.user');
 
 		return res.json({
-			friends: getFriendsCoreDetails(updateCurrentUser),
+			friends: getFriendsCoreDetails(updateCurrentUser.friends),
 		});
 	} catch (error) {
 		return next(error);
@@ -136,7 +143,7 @@ module.exports.putAcceptOrRejectFriendRequest = async (req, res, next) => {
 			'email firstName lastName profileImage'
 		);
 
-		return res.json({ friends: getFriendsCoreDetails(updatedUser) });
+		return res.json({ friends: getFriendsCoreDetails(updatedUser.friends) });
 	} catch (error) {
 		return next(error);
 	}
@@ -172,7 +179,7 @@ module.exports.deleteUserFriendOrRequest = async (req, res, next) => {
 			'email firstName lastName profileImage'
 		);
 
-		return res.json({ friends: getFriendsCoreDetails(updatedUser) });
+		return res.json({ friends: getFriendsCoreDetails(updatedUser.friends) });
 	} catch (error) {
 		return next(error);
 	}

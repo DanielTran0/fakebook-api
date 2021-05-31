@@ -3,6 +3,7 @@ const decode = require('unescape');
 const Post = require('../models/postModel');
 
 const decodeAllComments = (commentsArray) => {
+	if (commentsArray === 0) return [];
 	return commentsArray.map((comment) => ({
 		_id: comment._id,
 		user: comment.user,

@@ -52,7 +52,6 @@ describe('Post outgoing friend request', () => {
 			const data = await request(app)
 				.post(`/friends/${users.body.users?.[1]?._id}`)
 				.set('Authorization', `Bearer ${tokenData.body.token}`);
-
 			expect(data.status).toEqual(200);
 		});
 
@@ -99,7 +98,7 @@ describe('Post outgoing friend request', () => {
 			expect(data.status).toEqual(400);
 		});
 
-		test('reject if already friends or pending', async () => {
+		test('cancel if already friends or pending', async () => {
 			const tokenData = await request(app).post('/session').send({
 				email: sampleUser1.email,
 				password: sampleUser1.password,
@@ -173,45 +172,6 @@ describe('GET user friends', () => {
 				{
 					user: { ...otherFields3, _id: users.body.users?.[2]?._id },
 					status: 'outgoing',
-				},
-			],
-		});
-	});
-});
-
-describe('GET another user friends', () => {
-	test('status 200', async () => {
-		const tokenData = await request(app).post('/session').send({
-			email: sampleUser1.email,
-			password: sampleUser1.password,
-		});
-		const users = await request(app)
-			.get('/users')
-			.set('Authorization', `Bearer ${tokenData.body.token}`);
-		const data = await request(app)
-			.get(`/friends/${users.body.users?.[2]?._id}`)
-			.set('Authorization', `Bearer ${tokenData.body.token}`);
-
-		expect(data.status).toEqual(200);
-	});
-
-	test('receive another users friends', async () => {
-		const tokenData = await request(app).post('/session').send({
-			email: sampleUser1.email,
-			password: sampleUser1.password,
-		});
-		const users = await request(app)
-			.get('/users')
-			.set('Authorization', `Bearer ${tokenData.body.token}`);
-		const data = await request(app)
-			.get(`/friends/${users.body.users?.[2]?._id}`)
-			.set('Authorization', `Bearer ${tokenData.body.token}`);
-
-		expect(data.body).toEqual({
-			friends: [
-				{
-					user: { ...otherFields, _id: users.body.users?.[0]?._id },
-					status: 'incoming',
 				},
 			],
 		});
@@ -433,6 +393,36 @@ describe('delete users friend or request', () => {
 			expect(data.body).toEqual({
 				errors: { msg: 'That user is already not a friend' },
 			});
+		});
+	});
+});
+
+describe('GET another user friends', () => {
+	test('receive another users friends', async () => {
+		const user1 = await request(app).post('/session').send({
+			email: sampleUser1.email,
+			password: sampleUser1.password,
+		});
+
+		const users = await request(app)
+			.get('/users')
+			.set('Authorization', `Bearer ${user1.body.token}`);
+		await request(app)
+			.put(`/friends/${users.body.users?.[1]?._id}`)
+			.set('Authorization', `Bearer ${user1.body.token}`)
+			.send({ option: 'accept' });
+
+		const result = await request(app)
+			.get(`/friends/${users.body.users?.[1]?._id}`)
+			.set('Authorization', `Bearer ${user1.body.token}`);
+
+		expect(result.body).toEqual({
+			friends: [
+				{
+					user: { ...otherFields, _id: users.body.users?.[0]?._id },
+					status: 'friends',
+				},
+			],
 		});
 	});
 });

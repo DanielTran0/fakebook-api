@@ -6,6 +6,7 @@ const User = require('../models/userModel');
 const upload = require('../configs/multerConfig');
 
 const getPostCoreDetails = (postsArray) => {
+	if (postsArray.length === 0) return [];
 	return postsArray.map((post) => post.coreDetails);
 };
 
