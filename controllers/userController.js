@@ -1,6 +1,9 @@
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
+const fsPromises = require('fs/promises');
+const fs = require('fs');
 const User = require('../models/userModel');
+const upload = require('../configs/multerConfig');
 
 module.exports.getAllUsers = async (req, res, next) => {
 	try {
@@ -66,7 +69,7 @@ module.exports.postCreatedUser = [
 		}
 
 		try {
-			const isEmailUsed = await User.findOne({ email });
+			const isEmailUsed = await User.findOne({ email }, 'email');
 
 			if (isEmailUsed) {
 				res.status(400);
@@ -82,6 +85,7 @@ module.exports.postCreatedUser = [
 					],
 				});
 			}
+
 			const hashedPassword = await bcrypt.hash(password, 10);
 			const user = new User({
 				email,
@@ -102,6 +106,16 @@ module.exports.postCreatedUser = [
 ];
 
 module.exports.putUpdateUser = [
+	(req, res, next) => {
+		upload('userImage')(req, res, (err) => {
+			if (err) {
+				res.status(400);
+				return res.json({ errors: [err] });
+			}
+
+			return next();
+		});
+	},
 	body('email', 'Invalid email format')
 		.isEmail()
 		.trim()
@@ -139,19 +153,42 @@ module.exports.putUpdateUser = [
 	body('newPasswordConfirmation', 'Must be identical to newPassword').custom(
 		(value, { req }) => value === req.body.newPassword
 	),
+	body('lastImage').trim().escape().optional({ nullable: true }),
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
-		const { email, password, newPassword, firstName, lastName } = req.body;
-
-		if (!formErrors.isEmpty()) {
-			res.status(400);
-			return res.json({ user: req.body, errors: formErrors.array() });
-		}
+		const { email, firstName, lastName, password, newPassword, lastImage } =
+			req.body;
 
 		try {
-			const isEmailUsed = await User.findOne({ email });
+			if (!formErrors.isEmpty()) {
+				// if (req.file && fs.existsSync(req.file.path))
+				// 	await fsPromises.unlink(req.file.path);
 
-			if (isEmailUsed && req.user.email !== email) {
+				res.status(400);
+				return res.json({ user: req.body, errors: formErrors.array() });
+			}
+
+			const isEmailUsed = await User.findOne({ email }, 'email');
+			const oldUser = await User.findById(
+				req.params.userId,
+				'email password profileImage'
+			);
+			const isPasswordMatching = await bcrypt.compare(
+				password,
+				oldUser.password
+			);
+
+			if (!oldUser._id.equals(req.user._id)) {
+				res.status(400);
+				return res.json({
+					errors: [
+						{
+							msg: "You can not edit another user's profile",
+						},
+					],
+				});
+			}
+			if (isEmailUsed && oldUser.email !== email) {
 				res.status(400);
 				return res.json({
 					user: req.body,
@@ -165,12 +202,6 @@ module.exports.putUpdateUser = [
 					],
 				});
 			}
-
-			const isPasswordMatching = await bcrypt.compare(
-				password,
-				req.user.password
-			);
-
 			if (!isPasswordMatching) {
 				res.status(400);
 				return res.json({
@@ -186,6 +217,19 @@ module.exports.putUpdateUser = [
 				});
 			}
 
+			let profileImage = '';
+
+			if (lastImage === 'keep') profileImage = oldUser.profileImage;
+			if (req.file) profileImage = req.file.filename;
+			if (
+				lastImage !== 'keep' &&
+				oldUser.profileImage !== '' &&
+				fs.existsSync(`./public/images/users/${oldUser.profileImage}`)
+			)
+				await fsPromises.unlink(
+					`./public/images/users/${oldUser.profileImage}`
+				);
+
 			const hashedPassword = await bcrypt.hash(newPassword || password, 10);
 
 			const updatedUserFields = {
@@ -193,9 +237,10 @@ module.exports.putUpdateUser = [
 				firstName,
 				lastName,
 				password: hashedPassword,
+				profileImage,
 			};
 
-			await User.findByIdAndUpdate(req.user._id, updatedUserFields);
+			await User.findByIdAndUpdate(req.params.userId, updatedUserFields);
 
 			const updatedUser = await User.findById(req.user._id);
 
@@ -205,3 +250,5 @@ module.exports.putUpdateUser = [
 		}
 	},
 ];
+
+// TODO delete user

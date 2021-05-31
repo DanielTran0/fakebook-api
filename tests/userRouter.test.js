@@ -6,8 +6,9 @@ const { dbConnect, dbDisconnect } = require('../configs/mongoTestingConfig');
 const userData = require('./userData');
 require('../configs/passportStrategyConfig');
 
-const { sampleUser1, sampleUser2, sampleUser3, passwordConfirmation } =
-	userData;
+const { sampleUser1, sampleUser3, passwordConfirmation } = userData;
+const { friends, password, ...otherFields } = sampleUser1;
+const { friends: friends3, password: password3, ...otherFields3 } = sampleUser3;
 
 app.use('/users', userRouter);
 app.use('/session', sessionRouter);
@@ -28,18 +29,6 @@ afterAll(() => {
 });
 
 describe('GET all users', () => {
-	test('status  200', async () => {
-		const tokenData = await request(app).post('/session').send({
-			email: sampleUser1.email,
-			password: sampleUser1.password,
-		});
-		const data = await request(app)
-			.get('/users')
-			.set('Authorization', `Bearer ${tokenData.body.token}`);
-
-		expect(data.status).toEqual(200);
-	});
-
 	test('receive array of users', async () => {
 		const tokenData = await request(app).post('/session').send({
 			email: sampleUser1.email,
@@ -48,7 +37,6 @@ describe('GET all users', () => {
 		const data = await request(app)
 			.get('/users')
 			.set('Authorization', `Bearer ${tokenData.body.token}`);
-		const { friends, password, ...otherFields } = sampleUser1;
 
 		expect(data.body).toEqual({
 			users: [
@@ -62,21 +50,6 @@ describe('GET all users', () => {
 });
 
 describe('GET a single user', () => {
-	test('status 200', async () => {
-		const tokenData = await request(app).post('/session').send({
-			email: sampleUser1.email,
-			password: sampleUser1.password,
-		});
-		const users = await request(app)
-			.get('/users')
-			.set('Authorization', `Bearer ${tokenData.body.token}`);
-		const data = await request(app)
-			.get(`/users/${users.body.users[0]?._id}`)
-			.set('Authorization', `Bearer ${tokenData.body.token}`);
-
-		expect(data.status).toEqual(200);
-	});
-
 	test('receive a particular user', async () => {
 		const tokenData = await request(app).post('/session').send({
 			email: sampleUser1.email,
@@ -88,7 +61,6 @@ describe('GET a single user', () => {
 		const data = await request(app)
 			.get(`/users/${users.body.users[0]?._id}`)
 			.set('Authorization', `Bearer ${tokenData.body.token}`);
-		const { friends, password, ...otherFields } = sampleUser1;
 
 		expect(data.body).toEqual({
 			user: {
@@ -100,24 +72,15 @@ describe('GET a single user', () => {
 });
 
 describe('Post created user', () => {
-	describe('all fields filled correctly', () => {
-		test('status  200', async () => {
-			const data = await request(app)
-				.post('/users')
-				.send({ ...sampleUser2, passwordConfirmation });
-
-			expect(data.status).toEqual(200);
-		});
-
+	describe('succuss', () => {
 		test('received user back with id', async () => {
 			const data = await request(app)
 				.post('/users')
 				.send({ ...sampleUser3, passwordConfirmation });
-			const { friends, password, ...otherFields } = sampleUser3;
 
 			expect(data.body).toEqual({
 				user: {
-					...otherFields,
+					...otherFields3,
 					_id: data.body.user?._id,
 				},
 			});
@@ -131,48 +94,24 @@ describe('Post created user', () => {
 			const data = await request(app)
 				.get('/users')
 				.set('Authorization', `Bearer ${tokenData.body.token}`);
-			const { friends, password, ...otherFields1 } = sampleUser1;
-			const {
-				friends: friends2,
-				password: password2,
-				...otherFields2
-			} = sampleUser2;
-			const {
-				friends: friends3,
-				password: password3,
-				...otherFields3
-			} = sampleUser3;
 
 			expect(data.body).toEqual({
 				users: [
 					{
-						...otherFields1,
+						...otherFields,
 						_id: data.body.users[0]._id,
 					},
-					{
-						...otherFields2,
-						_id: data.body.users[1]._id,
-					},
+
 					{
 						...otherFields3,
-						_id: data.body.users[2]._id,
+						_id: data.body.users[1]._id,
 					},
 				],
 			});
 		});
 	});
 
-	describe('incorrect fields', () => {
-		test('any mistake status 400', async () => {
-			const data = await request(app)
-				.post('/users')
-				.send({
-					...userData.incorrectEmail,
-					passwordConfirmation,
-				});
-			expect(data.statusCode).toEqual(400);
-		});
-
+	describe('fail', () => {
 		test('incorrect email', async () => {
 			const data = await request(app)
 				.post('/users')
@@ -339,179 +278,184 @@ describe('Post created user', () => {
 });
 
 describe('PUT update a user', () => {
-	describe('same user', () => {
-		describe('correct fields', () => {
-			test('status 200', async () => {
-				const tokenData = await request(app).post('/session').send({
-					email: sampleUser1.email,
-					password: sampleUser1.password,
-				});
-
-				const data = await request(app)
-					.put(`/users/${tokenData.body.user?._id}`)
-					.send({
-						...sampleUser1,
-						firstName: 'Daniel',
-					})
-					.set('Authorization', `Bearer ${tokenData.body.token}`);
-				expect(data.status).toEqual(200);
+	describe('succuss', () => {
+		test('change detail and add image, receive updated user', async () => {
+			const user1 = await request(app).post('/session').send({
+				email: sampleUser1.email,
+				password: sampleUser1.password,
 			});
+			const result = await request(app)
+				.put(`/users/${user1.body.user?._id}`)
+				.field({
+					...sampleUser1,
+					firstName: 'Daniel',
+					lastName: 'Tran',
+				})
+				.attach('userImage', './tests/test-image1.jpg')
+				.set('Authorization', `Bearer ${user1.body.token}`);
 
-			test('receive updated user', async () => {
-				const tokenData = await request(app).post('/session').send({
-					email: sampleUser1.email,
-					password: sampleUser1.password,
-				});
-				const data = await request(app)
-					.put(`/users/${tokenData.body.user?._id}`)
-					.send({
-						...sampleUser1,
-						lastName: 'Tran',
-					})
-					.set('Authorization', `Bearer ${tokenData.body.token}`);
-				const { friends, password, ...otherFields } = sampleUser1;
-
-				expect(data.body).toEqual({
-					user: { ...otherFields, lastName: 'Tran', _id: data.body?.user?._id },
-				});
-			});
-
-			test('updated user is saved', async () => {
-				const tokenData = await request(app).post('/session').send({
-					email: sampleUser1.email,
-					password: sampleUser1.password,
-				});
-				const data = await request(app)
-					.get(`/users/${tokenData.body.user?._id}`)
-					.set('Authorization', `Bearer ${tokenData.body.token}`);
-				const { friends, password, ...otherFields } = sampleUser1;
-
-				expect(data.body).toEqual({
-					user: { ...otherFields, lastName: 'Tran', _id: data.body?.user?._id },
-				});
-			});
-
-			test('change password then change email', async () => {
-				const tokenData = await request(app).post('/session').send({
-					email: sampleUser1.email,
-					password: sampleUser1.password,
-				});
-				await request(app)
-					.put(`/users/${tokenData.body.user?._id}`)
-					.send({
-						...sampleUser1,
-						newPassword: 'Dog12345',
-						newPasswordConfirmation: 'Dog12345',
-					})
-					.set('Authorization', `Bearer ${tokenData.body.token}`);
-				const data = await request(app)
-					.put(`/users/${tokenData.body.user?._id}`)
-					.send({
-						...sampleUser1,
-						password: 'Dog12345',
-						email: 'sad@live.ca',
-					})
-					.set('Authorization', `Bearer ${tokenData.body.token}`);
-				const { friends, password, ...otherFields } = sampleUser1;
-
-				expect(data.body).toEqual({
-					user: {
-						...otherFields,
-						email: 'sad@live.ca',
-						_id: data.body?.user?._id,
-					},
-				});
+			expect(result.body).toEqual({
+				user: {
+					...otherFields,
+					firstName: 'Daniel',
+					lastName: 'Tran',
+					_id: result.body?.user?._id,
+					profileImage: result.body?.user?.profileImage,
+				},
 			});
 		});
 
-		describe('incorrect fields', () => {
-			test('status 400', async () => {
-				const tokenData = await request(app).post('/session').send({
-					email: sampleUser2.email,
-					password: sampleUser2.password,
-				});
-
-				const data = await request(app)
-					.put(`/users/${tokenData.body.user?._id}`)
-					.send({
-						...sampleUser2,
-						firstName: 's',
-					})
-					.set('Authorization', `Bearer ${tokenData.body.token}`);
-
-				expect(data.status).toEqual(400);
+		test('change detail but keep last used image, receive updated user', async () => {
+			const user1 = await request(app).post('/session').send({
+				email: sampleUser1.email,
+				password: sampleUser1.password,
 			});
+			const result = await request(app)
+				.put(`/users/${user1.body.user?._id}`)
+				.field({
+					...sampleUser1,
+					lastImage: 'keep',
+				})
+				.set('Authorization', `Bearer ${user1.body.token}`);
 
-			test('error array', async () => {
-				const tokenData = await request(app).post('/session').send({
-					email: sampleUser2.email,
-					password: sampleUser2.password,
-				});
+			expect(result.body).toEqual({
+				user: {
+					...otherFields,
+					_id: result.body?.user?._id,
+					profileImage: result.body?.user?.profileImage,
+				},
+			});
+		});
 
-				const data = await request(app)
-					.put(`/users/${tokenData.body.user?._id}`)
-					.send({
-						...sampleUser2,
-						firstName: 's',
-					})
-					.set('Authorization', `Bearer ${tokenData.body.token}`);
+		test('change detail use new image, receive updated user', async () => {
+			const user1 = await request(app).post('/session').send({
+				email: sampleUser1.email,
+				password: sampleUser1.password,
+			});
+			const result = await request(app)
+				.put(`/users/${user1.body.user?._id}`)
+				.field({
+					...sampleUser1,
+					lastImage: '',
+				})
+				.attach('userImage', './tests/test-image2.jpg')
+				.set('Authorization', `Bearer ${user1.body.token}`);
 
-				expect(data.body.errors).toEqual([
-					{
-						location: 'body',
-						msg: 'Minimum length of 2',
-						param: 'firstName',
-						value: 's',
-					},
-				]);
+			expect(result.body).toEqual({
+				user: {
+					...otherFields,
+					_id: result.body?.user?._id,
+					profileImage: result.body?.user?.profileImage,
+				},
+			});
+		});
+
+		test('change detail and remove image, receive updated user', async () => {
+			const user1 = await request(app).post('/session').send({
+				email: sampleUser1.email,
+				password: sampleUser1.password,
+			});
+			const result = await request(app)
+				.put(`/users/${user1.body.user?._id}`)
+				.field({
+					...sampleUser1,
+					email: 'hello@hotmail.com',
+					lastImage: '',
+				})
+				.set('Authorization', `Bearer ${user1.body.token}`);
+
+			expect(result.body).toEqual({
+				user: {
+					...otherFields,
+					email: 'hello@hotmail.com',
+					_id: result.body?.user?._id,
+					profileImage: '',
+				},
+			});
+		});
+
+		test('change password then change email', async () => {
+			const user3 = await request(app).post('/session').send({
+				email: sampleUser3.email,
+				password: sampleUser3.password,
+			});
+			await request(app)
+				.put(`/users/${user3.body.user?._id}`)
+				.field({
+					...sampleUser3,
+					newPassword: 'Dog12345',
+					newPasswordConfirmation: 'Dog12345',
+				})
+				.set('Authorization', `Bearer ${user3.body.token}`);
+			const result = await request(app)
+				.put(`/users/${user3.body.user?._id}`)
+				.field({
+					...sampleUser3,
+					password: 'Dog12345',
+					email: 'sad@live.ca',
+				})
+				.set('Authorization', `Bearer ${user3.body.token}`);
+
+			expect(result.body).toEqual({
+				user: {
+					...otherFields3,
+					email: 'sad@live.ca',
+					_id: result.body?.user?._id,
+				},
 			});
 		});
 	});
 
-	describe('user trying to update another user', () => {
-		test('status 400', async () => {
-			const tokenData = await request(app).post('/session').send({
-				email: sampleUser2.email,
-				password: sampleUser2.password,
+	describe('fail', () => {
+		test('wrong name length', async () => {
+			const user3 = await request(app).post('/session').send({
+				email: 'sad@live.ca',
+				password: 'Dog12345',
 			});
-			const users = await request(app)
-				.get('/users')
-				.set('Authorization', `Bearer ${tokenData.body.token}`);
-			const data = await request(app)
-				.put(`/users/${users.body.users[0]?._id}`)
-				.send({
-					...sampleUser2,
-					password: '12345678Q',
-				})
-				.set('Authorization', `Bearer ${tokenData.body.token}`);
 
-			expect(data.status).toEqual(400);
+			const result = await request(app)
+				.put(`/users/${user3.body.user?._id}`)
+				.field({
+					...sampleUser3,
+					firstName: 'a',
+				})
+				.set('Authorization', `Bearer ${user3.body.token}`);
+
+			expect(result.body).toEqual({
+				user: { ...otherFields3, password: password3, firstName: 'a' },
+				errors: [
+					{
+						location: 'body',
+						msg: 'Minimum length of 2',
+						param: 'firstName',
+						value: 'a',
+					},
+				],
+			});
 		});
 
-		test('error array', async () => {
-			const tokenData = await request(app).post('/session').send({
-				email: sampleUser2.email,
-				password: sampleUser2.password,
+		test('cannot edit another users profile', async () => {
+			const user1 = await request(app).post('/session').send({
+				email: 'hello@hotmail.com',
+				password: sampleUser1.password,
 			});
 			const users = await request(app)
 				.get('/users')
-				.set('Authorization', `Bearer ${tokenData.body.token}`);
-			const data = await request(app)
-				.put(`/users/${users.body.users[0]?._id}`)
-				.send({
-					...sampleUser2,
-					password: '12345678Q',
+				.set('Authorization', `Bearer ${user1.body.token}`);
+			const result = await request(app)
+				.put(`/users/${users.body.users[1]?._id}`)
+				.field({
+					...sampleUser1,
 				})
-				.set('Authorization', `Bearer ${tokenData.body.token}`);
+				.set('Authorization', `Bearer ${user1.body.token}`);
 
-			expect(data.body.errors).toEqual([
-				{
-					location: 'body',
-					msg: 'Incorrect original password',
-					param: 'password',
-					value: '12345678Q',
-				},
-			]);
+			expect(result.body).toEqual({
+				errors: [
+					{
+						msg: "You can not edit another user's profile",
+					},
+				],
+			});
 		});
 	});
 });
