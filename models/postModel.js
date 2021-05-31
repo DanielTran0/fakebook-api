@@ -20,4 +20,16 @@ const postSchema = new Schema({
 	],
 });
 
+postSchema.virtual('coreDetails').get(function getCoreDetails() {
+	return {
+		_id: this._id,
+		user: this.user,
+		text: this.text,
+		postImage: this.postImage,
+		date: this.date,
+		likes: this.likes,
+		comments: this.comments,
+	};
+});
+
 module.exports = mongoose.model('Post', postSchema);

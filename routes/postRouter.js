@@ -5,7 +5,7 @@ const authenticateRoute = require('../configs/passportAuthenticate');
 const router = express.Router();
 
 router.get('/', authenticateRoute, postController.getAllPosts);
-router.get('/:postId', authenticateRoute, postController.getPost);
+router.get('/:userId', authenticateRoute, postController.getPost);
 router.post('/', authenticateRoute, postController.postCreatedPost);
 router.put('/:postId', authenticateRoute, postController.putUpdatePost);
 router.delete('/:postId', authenticateRoute, postController.putDeletePost);
