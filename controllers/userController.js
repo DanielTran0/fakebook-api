@@ -179,6 +179,9 @@ module.exports.putUpdateUser = [
 			);
 
 			if (!oldUser._id.equals(req.user._id)) {
+				if (req.file && fs.existsSync(req.file.path))
+					await fsPromises.unlink(req.file.path);
+
 				res.status(400);
 				return res.json({
 					errors: [
@@ -189,6 +192,9 @@ module.exports.putUpdateUser = [
 				});
 			}
 			if (isEmailUsed && oldUser.email !== email) {
+				if (req.file && fs.existsSync(req.file.path))
+					await fsPromises.unlink(req.file.path);
+
 				res.status(400);
 				return res.json({
 					user: req.body,
@@ -203,6 +209,9 @@ module.exports.putUpdateUser = [
 				});
 			}
 			if (!isPasswordMatching) {
+				if (req.file && fs.existsSync(req.file.path))
+					await fsPromises.unlink(req.file.path);
+
 				res.status(400);
 				return res.json({
 					user: req.body,

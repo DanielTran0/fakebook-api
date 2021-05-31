@@ -90,9 +90,10 @@ module.exports.putUpdatePost = [
 		});
 	},
 	body('text', 'Minimum length is 2').trim().isLength({ min: 2 }).escape(),
+	body('lastImage').trim().escape().optional({ nullable: true }),
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
-		const { text } = req.body;
+		const { text, lastImage } = req.body;
 
 		try {
 			if (!formErrors.isEmpty()) {
@@ -103,24 +104,41 @@ module.exports.putUpdatePost = [
 				return res.json({ post: req.body, errors: formErrors.array() });
 			}
 
-			const updatedPostFields = {
-				text,
-				postImage: req.file?.filename || '',
-			};
+			const oldPost = await Post.findById(req.params.postId, 'user postImage');
 
-			const oldPost = await Post.findByIdAndUpdate(
-				req.params.postId,
-				updatedPostFields
-			);
+			if (!oldPost.user.equals(req.user._id)) {
+				if (req.file && fs.existsSync(req.file.path))
+					await fsPromises.unlink(req.file.path);
 
-			const updatedPost = await Post.findById(req.params.postId);
+				res.status(400);
+				return res.json({
+					errors: [
+						{
+							msg: "You can not edit another user's post",
+						},
+					],
+				});
+			}
 
+			let postImage = '';
+
+			if (lastImage === 'keep') postImage = oldPost.postImage;
+			if (req.file) postImage = req.file.filename;
 			if (
-				oldPost.postImage !== updatedPost.postImage &&
+				lastImage !== 'keep' &&
 				oldPost.postImage !== '' &&
 				fs.existsSync(`./public/images/posts/${oldPost.postImage}`)
 			)
 				await fsPromises.unlink(`./public/images/posts/${oldPost.postImage}`);
+
+			const updatedPostFields = {
+				text,
+				postImage,
+			};
+
+			await Post.findByIdAndUpdate(req.params.postId, updatedPostFields);
+
+			const updatedPost = await Post.findById(req.params.postId);
 
 			return res.json({ post: updatedPost.coreDetails });
 		} catch (error) {
@@ -129,7 +147,7 @@ module.exports.putUpdatePost = [
 	},
 ];
 
-module.exports.putDeletePost = async (req, res, next) => {
+module.exports.deletePost = async (req, res, next) => {
 	try {
 		const oldPost = await Post.findById(req.params.postId);
 

@@ -350,6 +350,35 @@ describe('PUT update a post', () => {
 			});
 		});
 	});
+
+	describe('fail', () => {
+		test('cant edit another users post', async () => {
+			const user2 = await request(app).post('/session').send({
+				email: sampleUser2.email,
+				password: sampleUser2.password,
+			});
+			const user1 = await request(app).post('/session').send({
+				email: sampleUser1.email,
+				password: sampleUser1.password,
+			});
+			const posts = await request(app)
+				.get(`/posts/${user1.body.user?._id}`)
+				.set('Authorization', `Bearer ${user2.body.token}`);
+			const result = await request(app)
+				.put(`/posts/${posts.body.posts?.[0]?._id}`)
+				.set('Authorization', `Bearer ${user2.body.token}`)
+				.field({ text: 'nature is nice' })
+				.attach('postImage', './tests/test-image2.jpg');
+
+			expect(result.body).toEqual({
+				errors: [
+					{
+						msg: "You can not edit another user's post",
+					},
+				],
+			});
+		});
+	});
 });
 
 describe('Delete a post', () => {
