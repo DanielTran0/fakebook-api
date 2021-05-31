@@ -57,19 +57,6 @@ afterAll(() => {
 	dbDisconnect();
 });
 
-// const tokenData = await request(app).post('/session').send({
-//   email: sampleUser1.email,
-//   password: sampleUser1.password,
-// });
-// const users = await request(app)
-//   .get('/users')
-//   .set('Authorization', `Bearer ${tokenData.body.token}`);
-// const data = await request(app)
-//   .post(`/friends/${users.body.users?.[1]?._id}`)
-//   .set('Authorization', `Bearer ${tokenData.body.token}`);
-
-// expect(data.status).toEqual(200);
-
 describe('POST created post', () => {
 	describe('succuss', () => {
 		test('create and receive new post', async () => {
