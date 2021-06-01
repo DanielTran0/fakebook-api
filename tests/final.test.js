@@ -80,6 +80,7 @@ beforeAll(async () => {
 		const user1Post = await request(app)
 			.post('/posts')
 			.field({ text: 'User 1 post' })
+			.attach('postImage', './tests/test-image2.jpg')
 			.set('Authorization', `Bearer ${userData1.body.token}`);
 		const user3Post = await request(app)
 			.post('/posts')
@@ -106,6 +107,15 @@ beforeAll(async () => {
 		await request(app)
 			.post(`/comments/${user3Post.body.post._id}`)
 			.send({ text: 'Saying hi to user 3' })
+			.set('Authorization', `Bearer ${userData1.body.token}`);
+
+		// user 1 profile image, test to ensure images are deleted
+		await request(app)
+			.put(`/users/${userData1.body.user?._id}`)
+			.field({
+				...sampleUser1,
+			})
+			.attach('userImage', './tests/test-image1.jpg')
 			.set('Authorization', `Bearer ${userData1.body.token}`);
 	} catch (error) {
 		console.log(error);
@@ -137,7 +147,8 @@ describe('view all generated resources and test delete', () => {
 						_id: posts.body.posts?.[0]?.comments?.[0]?.user?._id,
 						firstName: 'Dan',
 						lastName: 'Man',
-						profileImage: '',
+						profileImage:
+							posts.body.posts?.[0]?.comments?.[0]?.user?.profileImage,
 					},
 				},
 			],

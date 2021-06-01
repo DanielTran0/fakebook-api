@@ -297,6 +297,21 @@ module.exports.deleteUser = [
 				});
 			}
 
+			const allPosts = await Post.find({ user: user._id }, 'postImage');
+			const allPostsWithImages = allPosts.filter(
+				(post) => post.postImage !== ''
+			);
+			allPostsWithImages.forEach(async (post) => {
+				if (fs.existsSync(`./public/images/posts/${post.postImage}`))
+					await fsPromises.unlink(`./public/images/posts/${post.postImage}`);
+			});
+
+			if (
+				user.postImage !== '' &&
+				fs.existsSync(`./public/images/users/${user.profileImage}`)
+			)
+				await fsPromises.unlink(`./public/images/users/${user.profileImage}`);
+
 			await Post.updateMany(
 				{
 					'comments.user': user._id,
