@@ -16,14 +16,18 @@ const decodePostsText = (postsArray) => {
 	return postsArray.map((post) => ({ ...post, text: decode(post.text) }));
 };
 
-// TODO populate comments
 module.exports.getAllPosts = async (req, res, next) => {
 	try {
 		const user = await User.findById(req.user._id, 'friends');
-		const friendIds = user.friends.map((friend) => friend.user);
+		const userAcceptedFriends = user.friends.filter(
+			(friend) => friend.status === 'friends'
+		);
+		const friendIds = userAcceptedFriends.map((friend) => friend.user);
 		friendIds.push(user._id);
 
-		const posts = await Post.find({ user: { $in: friendIds } });
+		const posts = await Post.find({ user: { $in: friendIds } })
+			.populate('comments.user', 'firstName lastName profileImage')
+			.populate('likes.user', 'firstName lastName');
 
 		return res.json({ posts: decodePostsText(getPostCoreDetails(posts)) });
 	} catch (error) {
@@ -31,10 +35,11 @@ module.exports.getAllPosts = async (req, res, next) => {
 	}
 };
 
-// TODO populate comments
 module.exports.getPost = async (req, res, next) => {
 	try {
-		const posts = await Post.find({ user: req.params.userId });
+		const posts = await Post.find({ user: req.params.userId })
+			.populate('comments.user', 'firstName lastName profileImage')
+			.populate('likes.user', 'firstName lastName');
 
 		return res.json({ posts: decodePostsText(getPostCoreDetails(posts)) });
 	} catch (error) {

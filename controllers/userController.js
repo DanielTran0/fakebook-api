@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const fsPromises = require('fs/promises');
 const fs = require('fs');
 const User = require('../models/userModel');
+const Post = require('../models/postModel');
 const upload = require('../configs/multerConfig');
 
 module.exports.getAllUsers = async (req, res, next) => {
@@ -260,4 +261,66 @@ module.exports.putUpdateUser = [
 	},
 ];
 
-// TODO delete user
+module.exports.deleteUser = [
+	body('password')
+		.isLength({ min: 8 })
+		.withMessage('Minimum length is 8')
+		.matches('[0-9]')
+		.withMessage('Must contain a number')
+		.matches('[A-Z]')
+		.withMessage('Must contain a capital letter'),
+	async (req, res, next) => {
+		const formErrors = validationResult(req);
+		const { password } = req.body;
+
+		if (!formErrors.isEmpty()) {
+			res.status(400);
+			return res.json({ user: req.body, errors: formErrors.array() });
+		}
+
+		try {
+			const user = await User.findById(req.user._id, 'password profileImage');
+			const isPasswordMatching = await bcrypt.compare(password, user.password);
+
+			if (!isPasswordMatching) {
+				res.status(400);
+				return res.json({
+					user: req.body,
+					errors: [
+						{
+							location: 'body',
+							msg: 'Incorrect original password',
+							param: 'password',
+							value: password,
+						},
+					],
+				});
+			}
+
+			await Post.updateMany(
+				{
+					'comments.user': user._id,
+				},
+				{ $pull: { comments: { user: user._id } } }
+			);
+			await Post.updateMany(
+				{
+					'likes.user': user._id,
+				},
+				{ $pull: { likes: { user: user._id } } }
+			);
+			await Post.remove({ user: user._id });
+			await User.updateMany(
+				{
+					'friends.user': user._id,
+				},
+				{ $pull: { friends: { user: user._id } } }
+			);
+			await User.remove({ _id: user._id });
+
+			return res.json({ message: 'successful delete' });
+		} catch (error) {
+			return next(error);
+		}
+	},
+];
