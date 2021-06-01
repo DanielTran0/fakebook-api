@@ -68,13 +68,13 @@ describe('POST created post', () => {
 			const data = await request(app)
 				.post(`/posts`)
 				.set('Authorization', `Bearer ${tokenData.body.token}`)
-				.field({ text: 'hello' });
+				.field({ text: '"hello"' });
 
 			expect(data.body).toEqual({
 				post: {
 					_id: data.body.post?._id,
 					user: tokenData.body.user?._id,
-					text: 'hello',
+					text: '"hello"',
 					postImage: '',
 					date: data.body.post?.date,
 					likes: [],
@@ -229,7 +229,7 @@ describe('GET all posts', () => {
 				{
 					_id: data.body.posts?.[0]?._id,
 					user: user1Data.body.user?._id,
-					text: 'hello',
+					text: '"hello"',
 					postImage: data.body.posts?.[0]?.postImage,
 					date: data.body.posts?.[0]?.date,
 					comments: [],
@@ -275,7 +275,7 @@ describe('GET a specific post', () => {
 				{
 					_id: data.body.posts?.[0]?._id,
 					user: user1Data.body.user?._id,
-					text: 'hello',
+					text: '"hello"',
 					postImage: data.body.posts?.[0]?.postImage,
 					date: data.body.posts?.[0]?.date,
 					comments: [],

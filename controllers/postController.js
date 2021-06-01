@@ -1,6 +1,7 @@
 const { body, validationResult } = require('express-validator');
 const fsPromises = require('fs/promises');
 const fs = require('fs');
+const decode = require('unescape');
 const Post = require('../models/postModel');
 const User = require('../models/userModel');
 const upload = require('../configs/multerConfig');
@@ -8,6 +9,11 @@ const upload = require('../configs/multerConfig');
 const getPostCoreDetails = (postsArray) => {
 	if (postsArray.length === 0) return [];
 	return postsArray.map((post) => post.coreDetails);
+};
+
+const decodePostsText = (postsArray) => {
+	if (postsArray.length === 0) return [];
+	return postsArray.map((post) => ({ ...post, text: decode(post.text) }));
 };
 
 // TODO populate comments
@@ -19,7 +25,7 @@ module.exports.getAllPosts = async (req, res, next) => {
 
 		const posts = await Post.find({ user: { $in: friendIds } });
 
-		return res.json({ posts: getPostCoreDetails(posts) });
+		return res.json({ posts: decodePostsText(getPostCoreDetails(posts)) });
 	} catch (error) {
 		return next(error);
 	}
@@ -30,7 +36,7 @@ module.exports.getPost = async (req, res, next) => {
 	try {
 		const posts = await Post.find({ user: req.params.userId });
 
-		return res.json({ posts: getPostCoreDetails(posts) });
+		return res.json({ posts: decodePostsText(getPostCoreDetails(posts)) });
 	} catch (error) {
 		return next(error);
 	}
@@ -71,7 +77,9 @@ module.exports.postCreatedPost = [
 
 			await post.save();
 
-			return res.json({ post: post.coreDetails });
+			return res.json({
+				post: { ...post.coreDetails, text: decode(post.text) },
+			});
 		} catch (error) {
 			return next(error);
 		}
