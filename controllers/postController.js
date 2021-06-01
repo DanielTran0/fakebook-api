@@ -153,7 +153,9 @@ module.exports.putUpdatePost = [
 
 			const updatedPost = await Post.findById(req.params.postId);
 
-			return res.json({ post: updatedPost.coreDetails });
+			return res.json({
+				post: { ...updatedPost.coreDetails, text: decode(updatedPost.text) },
+			});
 		} catch (error) {
 			return next(error);
 		}
@@ -181,7 +183,9 @@ module.exports.deletePost = async (req, res, next) => {
 		)
 			await fsPromises.unlink(`./public/images/posts/${oldPost.postImage}`);
 
-		return res.json({ posts: getPostCoreDetails(updatedPosts) });
+		return res.json({
+			posts: decodePostsText(getPostCoreDetails(updatedPosts)),
+		});
 	} catch (error) {
 		return next(error);
 	}

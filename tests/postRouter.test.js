@@ -308,13 +308,13 @@ describe('PUT update a post', () => {
 			const data = await request(app)
 				.put(`/posts/${posts.body.posts?.[1]?._id}`)
 				.set('Authorization', `Bearer ${tokenData.body.token}`)
-				.field({ text: 'cats are better' });
+				.field({ text: '"cats" are better' });
 
 			expect(data.body).toEqual({
 				post: {
 					_id: data.body.post?._id,
 					user: tokenData.body.user?._id,
-					text: 'cats are better',
+					text: '"cats" are better',
 					postImage: '',
 					date: data.body.post?.date,
 					likes: [],
@@ -399,7 +399,7 @@ describe('Delete a post', () => {
 					{
 						_id: data.body.posts?.[0]?._id,
 						user: tokenData.body.user?._id,
-						text: 'cats are better',
+						text: '"cats" are better',
 						postImage: data.body.posts?.[0]?.postImage,
 						date: data.body.posts?.[0]?.date,
 						comments: [],

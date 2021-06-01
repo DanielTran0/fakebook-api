@@ -73,13 +73,13 @@ module.exports.postOutgoingRequest = async (req, res, next) => {
 		await newUserFriend.save();
 		await currentUser.save();
 
-		const updateCurrentUser = await User.findById(
+		const updatedCurrentUser = await User.findById(
 			req.user._id,
 			'friends'
-		).populate('friends.user');
+		).populate('friends.user', 'email firstName lastName profileImage');
 
 		return res.json({
-			friends: getFriendsCoreDetails(updateCurrentUser.friends),
+			friends: getFriendsCoreDetails(updatedCurrentUser.friends),
 		});
 	} catch (error) {
 		return next(error);
