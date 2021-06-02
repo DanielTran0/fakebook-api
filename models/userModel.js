@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 const userSchema = new Schema({
 	email: { type: String, required: true },
-	password: { type: String, required: true },
+	password: { type: String },
 	firstName: { type: String, required: true },
 	lastName: { type: String, required: true },
 	profileImage: { type: String, default: '' },
@@ -17,6 +17,7 @@ const userSchema = new Schema({
 			},
 		},
 	],
+	facebookId: { type: String },
 });
 
 userSchema.virtual('coreDetails').get(function getCoreDetails() {
