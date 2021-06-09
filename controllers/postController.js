@@ -62,7 +62,6 @@ module.exports.postCreatedPost = [
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
 		const { text } = req.body;
-
 		try {
 			if (!formErrors.isEmpty()) {
 				if (req.file && fs.existsSync(req.file.path))

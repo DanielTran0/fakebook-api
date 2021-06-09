@@ -66,7 +66,9 @@ describe('wrong login', () => {
 			email: sampleUser2.email,
 			password: sampleUser1.password,
 		});
-		expect(data.body).toEqual({ errors: [{ msg: 'Incorrect username' }] });
+		expect(data.body).toEqual({
+			errors: [{ msg: 'Incorrect Email', param: 'email' }],
+		});
 	});
 
 	test('wrong password', async () => {
@@ -77,7 +79,8 @@ describe('wrong login', () => {
 		expect(data.body).toEqual({
 			errors: [
 				{
-					msg: 'Incorrect password (Min Length: 8, 1 Capital Letter, 1 Number)',
+					msg: 'Incorrect Password (Min Length: 8, 1 Capital Letter, 1 Number)',
+					param: 'password',
 				},
 			],
 		});

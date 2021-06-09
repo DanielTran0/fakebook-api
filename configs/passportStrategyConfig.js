@@ -16,13 +16,15 @@ passport.use(
 			try {
 				const user = await User.findOne({ email });
 
-				if (!user) return done(null, false, { msg: 'Incorrect username' });
+				if (!user)
+					return done(null, false, { msg: 'Incorrect Email', param: 'email' });
 
 				const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
 				if (!isPasswordCorrect)
 					return done(null, false, {
-						msg: 'Incorrect password (Min Length: 8, 1 Capital Letter, 1 Number)',
+						msg: 'Incorrect Password (Min Length: 8, 1 Capital Letter, 1 Number)',
+						param: 'password',
 					});
 
 				return done(null, user);

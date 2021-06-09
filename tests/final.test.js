@@ -270,7 +270,9 @@ describe('view all generated resources and test delete', () => {
 			password: sampleUser1.password,
 		});
 
-		expect(userData1.body).toEqual({ errors: [{ msg: 'Incorrect username' }] });
+		expect(userData1.body).toEqual({
+			errors: [{ msg: 'Incorrect Email', param: 'email' }],
+		});
 	});
 
 	test('error can not delete if password is wrong', async () => {
