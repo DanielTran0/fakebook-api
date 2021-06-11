@@ -29,8 +29,16 @@ module.exports.postComment = [
 
 			await post.save();
 
+			const updatedPost = await Post.findById(
+				req.params.postId,
+				'comments'
+			).populate('comments.user', 'firstName lastName profileImage');
+
 			return res.json({
-				post: { _id: post._id, comments: decodeAllComments(post.comments) },
+				post: {
+					_id: post._id,
+					comments: decodeAllComments(updatedPost.comments),
+				},
 			});
 		} catch (error) {
 			return next(error);

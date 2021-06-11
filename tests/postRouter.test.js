@@ -214,8 +214,7 @@ describe('GET all posts', () => {
 			email: sampleUser2.email,
 			password: sampleUser2.password,
 		});
-
-		const user1Data = await request(app).post('/session').send({
+		await request(app).post('/session').send({
 			email: sampleUser1.email,
 			password: sampleUser1.password,
 		});
@@ -228,7 +227,12 @@ describe('GET all posts', () => {
 			posts: [
 				{
 					_id: data.body.posts?.[0]?._id,
-					user: user1Data.body.user?._id,
+					user: {
+						_id: data.body.posts?.[0]?.user?._id,
+						firstName: 'Dan',
+						lastName: 'Man',
+						profileImage: '',
+					},
 					text: '"hello"',
 					postImage: data.body.posts?.[0]?.postImage,
 					date: data.body.posts?.[0]?.date,
@@ -237,7 +241,12 @@ describe('GET all posts', () => {
 				},
 				{
 					_id: data.body.posts?.[1]?._id,
-					user: user1Data.body.user?._id,
+					user: {
+						_id: data.body.posts?.[1]?.user?._id,
+						firstName: 'Dan',
+						lastName: 'Man',
+						profileImage: '',
+					},
 					text: 'dogs are nice',
 					postImage: data.body.posts?.[1]?.postImage,
 					date: data.body.posts?.[1]?.date,
@@ -274,7 +283,12 @@ describe('GET a specific post', () => {
 			posts: [
 				{
 					_id: data.body.posts?.[0]?._id,
-					user: user1Data.body.user?._id,
+					user: {
+						_id: data.body.posts?.[0]?.user?._id,
+						firstName: 'Dan',
+						lastName: 'Man',
+						profileImage: '',
+					},
 					text: '"hello"',
 					postImage: data.body.posts?.[0]?.postImage,
 					date: data.body.posts?.[0]?.date,
@@ -283,7 +297,12 @@ describe('GET a specific post', () => {
 				},
 				{
 					_id: data.body.posts?.[1]?._id,
-					user: user1Data.body.user?._id,
+					user: {
+						_id: data.body.posts?.[0]?.user?._id,
+						firstName: 'Dan',
+						lastName: 'Man',
+						profileImage: '',
+					},
 					text: 'dogs are nice',
 					postImage: data.body.posts?.[1]?.postImage,
 					date: data.body.posts?.[1]?.date,

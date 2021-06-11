@@ -26,6 +26,9 @@ module.exports.getAllPosts = async (req, res, next) => {
 		friendIds.push(user._id);
 
 		const posts = await Post.find({ user: { $in: friendIds } })
+			.limit(10)
+			.sort({ date: 'desc' })
+			.populate('user', 'firstName lastName profileImage')
 			.populate('comments.user', 'firstName lastName profileImage')
 			.populate('likes.user', 'firstName lastName');
 
@@ -38,6 +41,9 @@ module.exports.getAllPosts = async (req, res, next) => {
 module.exports.getPost = async (req, res, next) => {
 	try {
 		const posts = await Post.find({ user: req.params.userId })
+			.sort({ date: 'desc' })
+
+			.populate('user', 'firstName lastName profileImage')
 			.populate('comments.user', 'firstName lastName profileImage')
 			.populate('likes.user', 'firstName lastName');
 
@@ -137,7 +143,7 @@ module.exports.putUpdatePost = [
 			if (lastImage === 'keep') postImage = oldPost.postImage;
 			if (req.file) postImage = req.file.filename;
 			if (
-				lastImage !== 'keep' &&
+				req.file &&
 				oldPost.postImage !== '' &&
 				fs.existsSync(`./public/images/posts/${oldPost.postImage}`)
 			)
@@ -150,7 +156,10 @@ module.exports.putUpdatePost = [
 
 			await Post.findByIdAndUpdate(req.params.postId, updatedPostFields);
 
-			const updatedPost = await Post.findById(req.params.postId);
+			const updatedPost = await Post.findById(req.params.postId)
+				.populate('user', 'firstName lastName profileImage')
+				.populate('comments.user', 'firstName lastName profileImage')
+				.populate('likes.user', 'firstName lastName');
 
 			return res.json({
 				post: { ...updatedPost.coreDetails, text: decode(updatedPost.text) },
@@ -165,6 +174,13 @@ module.exports.deletePost = async (req, res, next) => {
 	try {
 		const oldPost = await Post.findById(req.params.postId);
 
+		if (!oldPost) {
+			res.status(400);
+			return res.json({
+				errors: [{ msg: 'There is no post to delete' }],
+			});
+		}
+
 		if (!oldPost.user.equals(req.user._id)) {
 			res.status(400);
 			return res.json({
@@ -172,15 +188,15 @@ module.exports.deletePost = async (req, res, next) => {
 			});
 		}
 
-		await Post.findByIdAndDelete(req.params.postId);
-
-		const updatedPosts = await Post.find({ user: req.user._id });
-
 		if (
 			oldPost.postImage !== '' &&
 			fs.existsSync(`./public/images/posts/${oldPost.postImage}`)
 		)
 			await fsPromises.unlink(`./public/images/posts/${oldPost.postImage}`);
+
+		await Post.findByIdAndDelete(req.params.postId);
+
+		const updatedPosts = await Post.find({ user: req.user._id });
 
 		return res.json({
 			posts: decodePostsText(getPostCoreDetails(updatedPosts)),
