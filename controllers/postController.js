@@ -42,7 +42,7 @@ module.exports.getPost = async (req, res, next) => {
 	try {
 		const posts = await Post.find({ user: req.params.userId })
 			.sort({ date: 'desc' })
-
+			.limit(10)
 			.populate('user', 'firstName lastName profileImage')
 			.populate('comments.user', 'firstName lastName profileImage')
 			.populate('likes.user', 'firstName lastName');
@@ -143,7 +143,7 @@ module.exports.putUpdatePost = [
 			if (lastImage === 'keep') postImage = oldPost.postImage;
 			if (req.file) postImage = req.file.filename;
 			if (
-				req.file &&
+				(req.file || lastImage !== 'keep') &&
 				oldPost.postImage !== '' &&
 				fs.existsSync(`./public/images/posts/${oldPost.postImage}`)
 			)
@@ -196,6 +196,7 @@ module.exports.deletePost = async (req, res, next) => {
 
 		await Post.findByIdAndDelete(req.params.postId);
 
+		// TODO send succuss msg instead
 		const updatedPosts = await Post.find({ user: req.user._id });
 
 		return res.json({

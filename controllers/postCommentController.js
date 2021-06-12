@@ -9,6 +9,7 @@ const decodeAllComments = (commentsArray) => {
 		user: comment.user,
 		text: decode(comment.text),
 		date: comment.date,
+		likes: comment.likes,
 	}));
 };
 
@@ -86,8 +87,16 @@ module.exports.putChangeComment = [
 
 			await post.save();
 
+			const updatedPost = await Post.findById(postId, 'comments').populate(
+				'comments.user',
+				'firstName lastName profileImage'
+			);
+
 			return res.json({
-				post: { _id: post._id, comments: decodeAllComments(post.comments) },
+				post: {
+					_id: updatedPost._id,
+					comments: decodeAllComments(updatedPost.comments),
+				},
 			});
 		} catch (error) {
 			return next(error);
