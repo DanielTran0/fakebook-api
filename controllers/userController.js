@@ -31,33 +31,33 @@ module.exports.getSingleUser = async (req, res, next) => {
 };
 
 module.exports.postCreatedUser = [
-	body('email', 'Invalid email format')
+	body('email', 'Invalid email format.')
 		.isEmail()
 		.trim()
 		.escape()
 		.normalizeEmail(),
 	body('firstName')
 		.trim()
-		.isLength({ min: 2 })
-		.withMessage('Minimum length of 2')
+		.isLength({ min: 1 })
+		.withMessage('Minimum length of 1.')
 		.escape()
 		.isAlpha()
-		.withMessage('Contains non-alphabetical characters'),
+		.withMessage('Contains non-alphabetical characters.'),
 	body('lastName')
 		.trim()
-		.isLength({ min: 2 })
-		.withMessage('Minimum length of 2')
+		.isLength({ min: 1 })
+		.withMessage('Minimum length of 1.')
 		.escape()
 		.isAlpha()
-		.withMessage('Contains non-alphabetical characters'),
+		.withMessage('Contains non-alphabetical characters.'),
 	body('password')
 		.isLength({ min: 8 })
-		.withMessage('Minimum length is 8')
+		.withMessage('Minimum length is 8.')
 		.matches('[0-9]')
-		.withMessage('Must contain a number')
+		.withMessage('Must contain a number.')
 		.matches('[A-Z]')
-		.withMessage('Must contain a capital letter'),
-	body('passwordConfirmation', 'Must be identical to password').custom(
+		.withMessage('Must contain a capital letter.'),
+	body('passwordConfirmation', 'Must be identical to password.').custom(
 		(value, { req }) => value === req.body.password
 	),
 	async (req, res, next) => {
@@ -79,7 +79,7 @@ module.exports.postCreatedUser = [
 					errors: [
 						{
 							location: 'body',
-							msg: 'Email is already taken',
+							msg: 'Email is already taken.',
 							param: 'email',
 							value: email,
 						},
@@ -117,41 +117,41 @@ module.exports.putUpdateUser = [
 			return next();
 		});
 	},
-	body('email', 'Invalid email format')
+	body('email', 'Invalid email format.')
 		.isEmail()
 		.trim()
 		.escape()
 		.normalizeEmail(),
 	body('firstName')
 		.trim()
-		.isLength({ min: 2 })
-		.withMessage('Minimum length of 2')
+		.isLength({ min: 1 })
+		.withMessage('Minimum length of 1.')
 		.escape()
 		.isAlpha()
-		.withMessage('Contains non-alphabetical characters'),
+		.withMessage('Contains non-alphabetical characters.'),
 	body('lastName')
 		.trim()
-		.isLength({ min: 2 })
-		.withMessage('Minimum length of 2')
+		.isLength({ min: 1 })
+		.withMessage('Minimum length of 1.')
 		.escape()
 		.isAlpha()
-		.withMessage('Contains non-alphabetical characters'),
+		.withMessage('Contains non-alphabetical characters.'),
 	body('password')
 		.isLength({ min: 8 })
-		.withMessage('Minimum length is 8')
+		.withMessage('Minimum length is 8.')
 		.matches('[0-9]')
-		.withMessage('Must contain a number')
+		.withMessage('Must contain a number.')
 		.matches('[A-Z]')
-		.withMessage('Must contain a capital letter'),
+		.withMessage('Must contain a capital letter.'),
 	body('newPassword')
 		.isLength({ min: 8 })
-		.withMessage('Minimum length is 8')
+		.withMessage('Minimum length is 8.')
 		.matches('[0-9]')
-		.withMessage('Must contain a number')
+		.withMessage('Must contain a number.')
 		.matches('[A-Z]')
-		.withMessage('Must contain a capital letter')
+		.withMessage('Must contain a capital letter.')
 		.optional({ nullable: true }),
-	body('newPasswordConfirmation', 'Must be identical to newPassword').custom(
+	body('newPasswordConfirmation', 'Must be identical to password.').custom(
 		(value, { req }) => value === req.body.newPassword
 	),
 	body('lastImage').trim().escape().optional({ nullable: true }),
@@ -187,7 +187,7 @@ module.exports.putUpdateUser = [
 				return res.json({
 					errors: [
 						{
-							msg: "You can not edit another user's profile",
+							msg: "You can not edit another user's profile.",
 						},
 					],
 				});
@@ -202,7 +202,7 @@ module.exports.putUpdateUser = [
 					errors: [
 						{
 							location: 'body',
-							msg: 'Email is already taken',
+							msg: 'Email is already taken.',
 							param: 'email',
 							value: email,
 						},
@@ -219,7 +219,7 @@ module.exports.putUpdateUser = [
 					errors: [
 						{
 							location: 'body',
-							msg: 'Incorrect original password',
+							msg: 'Incorrect original password.',
 							param: 'password',
 							value: password,
 						},
@@ -264,11 +264,11 @@ module.exports.putUpdateUser = [
 module.exports.deleteUser = [
 	body('password')
 		.isLength({ min: 8 })
-		.withMessage('Minimum length is 8')
+		.withMessage('Minimum length is 8.')
 		.matches('[0-9]')
-		.withMessage('Must contain a number')
+		.withMessage('Must contain a number.')
 		.matches('[A-Z]')
-		.withMessage('Must contain a capital letter'),
+		.withMessage('Must contain a capital letter.'),
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
 		const { password } = req.body;
@@ -289,7 +289,7 @@ module.exports.deleteUser = [
 					errors: [
 						{
 							location: 'body',
-							msg: 'Incorrect original password',
+							msg: 'Incorrect original password.',
 							param: 'password',
 							value: password,
 						},

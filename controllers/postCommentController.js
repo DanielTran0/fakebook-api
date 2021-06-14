@@ -48,8 +48,8 @@ module.exports.postComment = [
 ];
 
 module.exports.putChangeComment = [
-	body('text', 'Minimum length is 1').trim().isLength({ min: 1 }).escape(),
-	body('postId', 'Post id is required').trim().escape().not().isEmpty(),
+	body('text', 'Minimum length is 1.').trim().isLength({ min: 1 }).escape(),
+	body('postId', 'Post id is required.').trim().escape().not().isEmpty(),
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
 		const { text, postId } = req.body;
@@ -69,20 +69,20 @@ module.exports.putChangeComment = [
 			if (postCommentIndex < 0) {
 				res.status(400);
 				return res.json({
-					errors: [{ msg: 'Could not find comment to edit' }],
+					errors: [{ msg: 'Could not find comment to edit.' }],
 				});
 			}
 			if (!post.comments[postCommentIndex].user.equals(req.user._id)) {
 				res.status(400);
 				return res.json({
-					errors: [{ msg: 'Only user who made the comment can edit it' }],
+					errors: [{ msg: 'Only user who made the comment can edit it.' }],
 				});
 			}
 
 			post.comments[postCommentIndex] = {
 				text,
 				user: req.user._id,
-				date: Date.now(),
+				date: post.comments[postCommentIndex].date,
 			};
 
 			await post.save();
@@ -125,13 +125,13 @@ module.exports.deleteComment = [
 			if (postCommentIndex < 0) {
 				res.status(400);
 				return res.json({
-					errors: [{ msg: 'Could not find comment to delete' }],
+					errors: [{ msg: 'Could not find comment to delete.' }],
 				});
 			}
 			if (!post.comments[postCommentIndex].user.equals(req.user._id)) {
 				res.status(400);
 				return res.json({
-					errors: [{ msg: 'Only user who made the comment can delete it' }],
+					errors: [{ msg: 'Only user who made the comment can delete it.' }],
 				});
 			}
 

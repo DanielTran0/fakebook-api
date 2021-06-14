@@ -44,7 +44,7 @@ module.exports.postOutgoingRequest = async (req, res, next) => {
 	if (req.user._id.equals(req.params.userId)) {
 		res.status(400);
 		return res.json({
-			errors: [{ msg: 'Can not add yourself as a friend' }],
+			errors: [{ msg: 'Can not add yourself as a friend.' }],
 		});
 	}
 
@@ -58,7 +58,7 @@ module.exports.postOutgoingRequest = async (req, res, next) => {
 
 		if (pendingRequestOrAlreadyFriends) {
 			res.status(400);
-			return res.json({ errors: [{ msg: 'Already friends or pending' }] });
+			return res.json({ errors: [{ msg: 'Already friends or pending.' }] });
 		}
 
 		const outgoingFriendRequest = {
@@ -92,7 +92,7 @@ module.exports.putAcceptOrRejectFriendRequest = async (req, res, next) => {
 	if (option !== 'accept' && option !== 'reject') {
 		res.status(400);
 		return res.json({
-			errors: [{ msg: 'Invalid option (accept or reject request)' }],
+			errors: [{ msg: 'Invalid option (accept or reject request).' }],
 		});
 	}
 
@@ -116,7 +116,7 @@ module.exports.putAcceptOrRejectFriendRequest = async (req, res, next) => {
 			return res.json({
 				errors: [
 					{
-						msg: 'Can not accept reject user that is already a friend',
+						msg: 'Can not accept reject user that is already a friend.',
 					},
 				],
 			});
@@ -164,7 +164,7 @@ module.exports.deleteUserFriendOrRequest = async (req, res, next) => {
 		if (currentUserFriendArrayIndex < 0 || friendUserFriendArrayIndex < 0) {
 			res.status(400);
 			return res.json({
-				errors: { msg: 'That user is already not a friend' },
+				errors: { msg: 'That user is already not a friend.' },
 			});
 		}
 

@@ -64,7 +64,7 @@ module.exports.postCreatedPost = [
 			return next();
 		});
 	},
-	body('text', 'Minimum length is 2').trim().isLength({ min: 2 }).escape(),
+	body('text', 'Minimum length is 2.').trim().isLength({ min: 2 }).escape(),
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
 		const { text } = req.body;
@@ -107,7 +107,7 @@ module.exports.putUpdatePost = [
 			return next();
 		});
 	},
-	body('text', 'Minimum length is 2').trim().isLength({ min: 2 }).escape(),
+	body('text', 'Minimum length is 2.').trim().isLength({ min: 2 }).escape(),
 	body('lastImage').trim().escape().optional({ nullable: true }),
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
@@ -132,7 +132,7 @@ module.exports.putUpdatePost = [
 				return res.json({
 					errors: [
 						{
-							msg: "You can not edit another user's post",
+							msg: "You can not edit another user's post.",
 						},
 					],
 				});
@@ -177,14 +177,14 @@ module.exports.deletePost = async (req, res, next) => {
 		if (!oldPost) {
 			res.status(400);
 			return res.json({
-				errors: [{ msg: 'There is no post to delete' }],
+				errors: [{ msg: 'There is no post to delete.' }],
 			});
 		}
 
 		if (!oldPost.user.equals(req.user._id)) {
 			res.status(400);
 			return res.json({
-				errors: [{ msg: 'Need to be message creator to delete message' }],
+				errors: [{ msg: 'Need to be message creator to delete message.' }],
 			});
 		}
 

@@ -53,7 +53,7 @@ module.exports.putChangeLikeOnComment = [
 			if (commentIndex <= -1) {
 				res.status(400);
 				return res.json({
-					errors: [{ msg: 'Could not find comment on post to like' }],
+					errors: [{ msg: 'Could not find comment on post to like.' }],
 				});
 			}
 
