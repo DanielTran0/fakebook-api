@@ -17,7 +17,7 @@ passport.use(
 				const user = await User.findOne({ email });
 
 				if (!user)
-					return done(null, false, { msg: 'Incorrect Email.', param: 'email' });
+					return done(null, false, { msg: 'Email Not Found.', param: 'email' });
 
 				const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
