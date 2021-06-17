@@ -69,13 +69,20 @@ module.exports.putChangeComment = [
 			if (postCommentIndex < 0) {
 				res.status(400);
 				return res.json({
-					errors: [{ msg: 'Could not find comment to edit.' }],
+					errors: [
+						{ msg: 'Could not find comment to edit.', param: 'general' },
+					],
 				});
 			}
 			if (!post.comments[postCommentIndex].user.equals(req.user._id)) {
 				res.status(400);
 				return res.json({
-					errors: [{ msg: 'Only user who made the comment can edit it.' }],
+					errors: [
+						{
+							msg: 'Only user who made the comment can edit it.',
+							param: 'general',
+						},
+					],
 				});
 			}
 
@@ -116,7 +123,10 @@ module.exports.deleteComment = [
 		}
 
 		try {
-			const post = await Post.findById(postId, 'comments');
+			const post = await Post.findById(postId, 'comments').populate(
+				'comments.user',
+				'firstName lastName profileImage'
+			);
 
 			const postCommentIndex = post.comments.findIndex((comment) =>
 				comment._id.equals(req.params.commentId)
@@ -125,13 +135,20 @@ module.exports.deleteComment = [
 			if (postCommentIndex < 0) {
 				res.status(400);
 				return res.json({
-					errors: [{ msg: 'Could not find comment to delete.' }],
+					errors: [
+						{ msg: 'Could not find comment to delete.', param: 'general' },
+					],
 				});
 			}
 			if (!post.comments[postCommentIndex].user.equals(req.user._id)) {
 				res.status(400);
 				return res.json({
-					errors: [{ msg: 'Only user who made the comment can delete it.' }],
+					errors: [
+						{
+							msg: 'Only user who made the comment can delete it.',
+							param: 'general',
+						},
+					],
 				});
 			}
 

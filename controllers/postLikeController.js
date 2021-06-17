@@ -3,8 +3,10 @@ const Post = require('../models/postModel');
 
 module.exports.putChangeLikeOnPost = async (req, res, next) => {
 	try {
-		const post = await Post.findById(req.params.postId, 'likes');
-
+		const post = await Post.findById(req.params.postId, 'likes').populate(
+			'likes.user',
+			'firstName lastName'
+		);
 		const likedPostIndex = post.likes.findIndex((like) =>
 			like.user.equals(req.user._id)
 		);
@@ -53,7 +55,12 @@ module.exports.putChangeLikeOnComment = [
 			if (commentIndex <= -1) {
 				res.status(400);
 				return res.json({
-					errors: [{ msg: 'Could not find comment on post to like.' }],
+					errors: [
+						{
+							msg: 'Could not find comment on post to like.',
+							param: 'general',
+						},
+					],
 				});
 			}
 
@@ -66,8 +73,7 @@ module.exports.putChangeLikeOnComment = [
 				post.save();
 
 				return res.json({
-					post: {
-						_id: post._id,
+					comment: {
 						likes: post.comments[commentIndex].likes,
 					},
 				});
@@ -76,14 +82,10 @@ module.exports.putChangeLikeOnComment = [
 			post.comments[commentIndex].likes.push({ user: req.user._id });
 			await post.save();
 
-			const updatedPost = await Post.findById(postId, 'comments').populate(
-				'comments.likes.user',
-				'firstName lastName'
-			);
+			const updatedPost = await Post.findById(postId, 'comments');
 
 			return res.json({
-				post: {
-					_id: updatedPost._id,
+				comment: {
 					likes: updatedPost.comments[commentIndex].likes,
 				},
 			});

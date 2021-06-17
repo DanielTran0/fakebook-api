@@ -16,3 +16,9 @@ module.exports.postNewSession = (req, res, next) => {
 		return res.json({ user: user.coreDetails, token });
 	})(req, res, next);
 };
+
+module.exports.postFacebookSession = (req, res) => {
+	const { profileImage, facebookId, _id, firstName, lastName } = req.user;
+
+	res.send({ user: { profileImage, facebookId, _id, firstName, lastName } });
+};

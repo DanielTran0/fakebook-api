@@ -26,7 +26,7 @@ const checkFileType = (req, file, cb) => {
 
 	if (validExtname && validMimetype) return cb(null, true);
 
-	return cb({ msg: 'Only upload images ' });
+	return cb({ msg: 'Only upload images.', param: 'general' });
 };
 
 const upload = (imageFieldname) => {

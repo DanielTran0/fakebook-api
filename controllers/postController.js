@@ -6,6 +6,8 @@ const Post = require('../models/postModel');
 const User = require('../models/userModel');
 const upload = require('../configs/multerConfig');
 
+// TODO fix post and comment decoding
+
 const getPostCoreDetails = (postsArray) => {
 	if (postsArray.length === 0) return [];
 	return postsArray.map((post) => post.coreDetails);
@@ -58,16 +60,29 @@ module.exports.postCreatedPost = [
 		upload('postImage')(req, res, (err) => {
 			if (err) {
 				res.status(400);
-				return res.json({ errors: [err] });
+				return res.json({ errors: [{ ...err, param: 'general' }] });
 			}
 
 			return next();
 		});
 	},
-	body('text', 'Minimum length is 2.').trim().isLength({ min: 2 }).escape(),
+	body('text').trim().escape().optional({ nullable: true }),
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
 		const { text } = req.body;
+
+		if (!req.file && !text) {
+			res.status(400);
+			return res.json({
+				errors: [
+					{
+						msg: 'Need either text or an image to create post.',
+						param: 'general',
+					},
+				],
+			});
+		}
+
 		try {
 			if (!formErrors.isEmpty()) {
 				if (req.file && fs.existsSync(req.file.path))
@@ -87,8 +102,13 @@ module.exports.postCreatedPost = [
 
 			await post.save();
 
+			const newPost = await Post.findById(post._id).populate(
+				'user',
+				'firstName lastName profileImage'
+			);
+
 			return res.json({
-				post: { ...post.coreDetails, text: decode(post.text) },
+				post: { ...newPost.coreDetails, text: decode(newPost.text) },
 			});
 		} catch (error) {
 			return next(error);
@@ -101,13 +121,13 @@ module.exports.putUpdatePost = [
 		upload('postImage')(req, res, (err) => {
 			if (err) {
 				res.status(400);
-				return res.json({ errors: [err] });
+				return res.json({ errors: [{ ...err, param: 'general' }] });
 			}
 
 			return next();
 		});
 	},
-	body('text', 'Minimum length is 2.').trim().isLength({ min: 2 }).escape(),
+	body('text').trim().escape().optional({ nullable: true }),
 	body('lastImage').trim().escape().optional({ nullable: true }),
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
@@ -124,6 +144,21 @@ module.exports.putUpdatePost = [
 
 			const oldPost = await Post.findById(req.params.postId, 'user postImage');
 
+			if (
+				(!text && !req.file && !oldPost.postImage) ||
+				(!text && !req.file && oldPost.postImage && lastImage !== 'keep')
+			) {
+				res.status(400);
+				return res.json({
+					errors: [
+						{
+							msg: 'Need either text or an image to edit post.',
+							param: 'general',
+						},
+					],
+				});
+			}
+
 			if (!oldPost.user.equals(req.user._id)) {
 				if (req.file && fs.existsSync(req.file.path))
 					await fsPromises.unlink(req.file.path);
@@ -133,6 +168,7 @@ module.exports.putUpdatePost = [
 					errors: [
 						{
 							msg: "You can not edit another user's post.",
+							param: 'general',
 						},
 					],
 				});
@@ -177,14 +213,19 @@ module.exports.deletePost = async (req, res, next) => {
 		if (!oldPost) {
 			res.status(400);
 			return res.json({
-				errors: [{ msg: 'There is no post to delete.' }],
+				errors: [{ msg: 'There is no post to delete.', param: 'general' }],
 			});
 		}
 
 		if (!oldPost.user.equals(req.user._id)) {
 			res.status(400);
 			return res.json({
-				errors: [{ msg: 'Need to be message creator to delete message.' }],
+				errors: [
+					{
+						msg: 'Need to be message creator to delete message.',
+						param: 'general',
+					},
+				],
 			});
 		}
 
@@ -196,7 +237,7 @@ module.exports.deletePost = async (req, res, next) => {
 
 		await Post.findByIdAndDelete(req.params.postId);
 
-		// TODO send succuss msg instead
+		// TODO send succuss message instead
 		const updatedPosts = await Post.find({ user: req.user._id });
 
 		return res.json({

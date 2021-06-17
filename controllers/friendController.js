@@ -12,7 +12,7 @@ module.exports.getUserFriends = async (req, res, next) => {
 	try {
 		const user = await User.findById(req.user._id, 'friends').populate(
 			'friends.user',
-			'email firstName lastName profileImage'
+			' firstName lastName profileImage'
 		);
 
 		return res.json({ friends: getFriendsCoreDetails(user.friends) });
@@ -25,7 +25,7 @@ module.exports.getAnotherUserFriends = async (req, res, next) => {
 	try {
 		const user = await User.findById(req.params.userId, 'friends').populate(
 			'friends.user',
-			'email firstName lastName profileImage'
+			' firstName lastName profileImage'
 		);
 
 		const userUpdatedFriends = user.friends.filter((friend) => {
@@ -76,7 +76,7 @@ module.exports.postOutgoingRequest = async (req, res, next) => {
 		const updatedCurrentUser = await User.findById(
 			req.user._id,
 			'friends'
-		).populate('friends.user', 'email firstName lastName profileImage');
+		).populate('friends.user', ' firstName lastName profileImage');
 
 		return res.json({
 			friends: getFriendsCoreDetails(updatedCurrentUser.friends),
@@ -140,7 +140,7 @@ module.exports.putAcceptOrRejectFriendRequest = async (req, res, next) => {
 
 		const updatedUser = await User.findById(req.user._id, 'friends').populate(
 			'friends.user',
-			'email firstName lastName profileImage'
+			' firstName lastName profileImage'
 		);
 
 		return res.json({ friends: getFriendsCoreDetails(updatedUser.friends) });
@@ -176,7 +176,7 @@ module.exports.deleteUserFriendOrRequest = async (req, res, next) => {
 
 		const updatedUser = await User.findById(req.user._id, 'friends').populate(
 			'friends.user',
-			'email firstName lastName profileImage'
+			' firstName lastName profileImage'
 		);
 
 		return res.json({ friends: getFriendsCoreDetails(updatedUser.friends) });

@@ -8,7 +8,9 @@ const upload = require('../configs/multerConfig');
 
 module.exports.getAllUsers = async (req, res, next) => {
 	try {
-		const users = await User.find({}, 'email firstName lastName profileImage');
+		const users = await User.find({}, 'firstName lastName profileImage')
+			.collation({ locale: 'en' })
+			.sort('lastName');
 
 		return res.json({ users });
 	} catch (error) {
@@ -21,7 +23,7 @@ module.exports.getSingleUser = async (req, res, next) => {
 	try {
 		const user = await User.findById(
 			req.params.userId,
-			'email firstName lastName profileImage'
+			'firstName lastName profileImage'
 		);
 
 		return res.json({ user: user.coreDetails });
@@ -93,8 +95,6 @@ module.exports.postCreatedUser = [
 				firstName,
 				lastName,
 				password: hashedPassword,
-				profileImage: '',
-				friends: [],
 			});
 
 			await user.save();
@@ -188,6 +188,7 @@ module.exports.putUpdateUser = [
 					errors: [
 						{
 							msg: "You can not edit another user's profile.",
+							param: 'general',
 						},
 					],
 				});

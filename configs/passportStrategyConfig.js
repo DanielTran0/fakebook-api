@@ -17,13 +17,13 @@ passport.use(
 				const user = await User.findOne({ email });
 
 				if (!user)
-					return done(null, false, { msg: 'Incorrect Email', param: 'email' });
+					return done(null, false, { msg: 'Incorrect Email.', param: 'email' });
 
 				const isPasswordCorrect = await bcrypt.compare(password, user.password);
 
 				if (!isPasswordCorrect)
 					return done(null, false, {
-						msg: 'Incorrect Password (Min Length: 8, 1 Capital Letter, 1 Number)',
+						msg: 'Incorrect Password (Min Length: 8, 1 Capital Letter, 1 Number).',
 						param: 'password',
 					});
 
@@ -55,7 +55,6 @@ passport.use(
 	)
 );
 
-// TODO fix user creation
 passport.use(
 	new FacebookTokenStrategy(
 		{
@@ -67,13 +66,12 @@ passport.use(
 			const {
 				id,
 				email,
-				picture,
-				first_name: firstName,
 				last_name: lastName,
+				first_name: firstName,
 			} = profile._json;
 
 			try {
-				const userExists = await User.findOne({ facebookId: profile.id });
+				const userExists = await User.findOne({ facebookId: id });
 
 				if (userExists) return done(null, userExists);
 
@@ -81,7 +79,7 @@ passport.use(
 					email,
 					firstName,
 					lastName,
-					profileImage: picture.data?.url || '',
+					profileImage: profile.photos[0].value,
 					facebookId: id,
 				});
 

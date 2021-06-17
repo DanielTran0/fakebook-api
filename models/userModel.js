@@ -17,13 +17,12 @@ const userSchema = new Schema({
 			},
 		},
 	],
-	facebookId: { type: String },
+	facebookId: { type: String, default: '' },
 });
 
 userSchema.virtual('coreDetails').get(function getCoreDetails() {
 	return {
 		_id: this._id,
-		email: this.email,
 		firstName: this.firstName,
 		lastName: this.lastName,
 		profileImage: this.profileImage,
