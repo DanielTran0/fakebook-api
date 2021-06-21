@@ -1,21 +1,35 @@
 const { body, validationResult } = require('express-validator');
+const validator = require('validator');
 const fsPromises = require('fs/promises');
 const fs = require('fs');
-const decode = require('unescape');
 const Post = require('../models/postModel');
 const User = require('../models/userModel');
 const upload = require('../configs/multerConfig');
-
-// TODO fix post and comment decoding
 
 const getPostCoreDetails = (postsArray) => {
 	if (postsArray.length === 0) return [];
 	return postsArray.map((post) => post.coreDetails);
 };
 
+const decodePostComments = (commentsArray) => {
+	return commentsArray.map((comment) => {
+		return {
+			_id: comment.id,
+			text: validator.unescape(comment.text),
+			user: comment.user,
+			date: comment.date,
+			likes: comment.likes,
+		};
+	});
+};
+
 const decodePostsText = (postsArray) => {
 	if (postsArray.length === 0) return [];
-	return postsArray.map((post) => ({ ...post, text: decode(post.text) }));
+	return postsArray.map((post) => ({
+		...post,
+		text: validator.unescape(post.text),
+		comments: decodePostComments(post.comments),
+	}));
 };
 
 module.exports.getAllPosts = async (req, res, next) => {
@@ -30,6 +44,7 @@ module.exports.getAllPosts = async (req, res, next) => {
 		const posts = await Post.find({ user: { $in: friendIds } })
 			.limit(10)
 			.sort({ date: 'desc' })
+			.skip(Number(req.query.skip))
 			.populate('user', 'firstName lastName profileImage')
 			.populate('comments.user', 'firstName lastName profileImage')
 			.populate('likes.user', 'firstName lastName');
@@ -108,7 +123,10 @@ module.exports.postCreatedPost = [
 			);
 
 			return res.json({
-				post: { ...newPost.coreDetails, text: decode(newPost.text) },
+				post: {
+					...newPost.coreDetails,
+					text: validator.unescape(newPost.text),
+				},
 			});
 		} catch (error) {
 			return next(error);
@@ -198,7 +216,10 @@ module.exports.putUpdatePost = [
 				.populate('likes.user', 'firstName lastName');
 
 			return res.json({
-				post: { ...updatedPost.coreDetails, text: decode(updatedPost.text) },
+				post: {
+					...updatedPost.coreDetails,
+					text: validator.unescape(updatedPost.text),
+				},
 			});
 		} catch (error) {
 			return next(error);

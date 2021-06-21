@@ -18,9 +18,10 @@ module.exports.postNewSession = (req, res, next) => {
 };
 
 module.exports.postFacebookSession = (req, res) => {
-	const { profileImage, facebookId, _id, firstName, lastName } = req.user;
+	const { profileImage, email, facebookId, _id, firstName, lastName } =
+		req.user;
 
 	res.send({
-		user: { profileImage, facebookId, _id, firstName, lastName },
+		user: { profileImage, email, facebookId, _id, firstName, lastName },
 	});
 };

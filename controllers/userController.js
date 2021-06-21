@@ -111,7 +111,17 @@ module.exports.putUpdateUser = [
 		upload('userImage')(req, res, (err) => {
 			if (err) {
 				res.status(400);
-				return res.json({ errors: [err] });
+				return res.json({ errors: [{ ...err, param: 'general' }] });
+			}
+
+			return next();
+		});
+	},
+	(req, res, next) => {
+		upload('backgroundImage')(req, res, (err) => {
+			if (err) {
+				res.status(400);
+				return res.json({ errors: [{ ...err, param: 'general' }] });
 			}
 
 			return next();
@@ -142,7 +152,8 @@ module.exports.putUpdateUser = [
 		.matches('[0-9]')
 		.withMessage('Must contain a number.')
 		.matches('[A-Z]')
-		.withMessage('Must contain a capital letter.'),
+		.withMessage('Must contain a capital letter.')
+		.optional({ checkFalsy: true }),
 	body('newPassword')
 		.isLength({ min: 8 })
 		.withMessage('Minimum length is 8.')
@@ -150,11 +161,11 @@ module.exports.putUpdateUser = [
 		.withMessage('Must contain a number.')
 		.matches('[A-Z]')
 		.withMessage('Must contain a capital letter.')
-		.optional({ nullable: true }),
+		.optional({ checkFalsy: true }),
 	body('newPasswordConfirmation', 'Must be identical to password.').custom(
 		(value, { req }) => value === req.body.newPassword
 	),
-	body('lastImage').trim().escape().optional({ nullable: true }),
+	body('lastImage').trim().escape().optional({ checkFalsy: true }),
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
 		const { email, firstName, lastName, password, newPassword, lastImage } =
@@ -172,12 +183,12 @@ module.exports.putUpdateUser = [
 			const isEmailUsed = await User.findOne({ email }, 'email');
 			const oldUser = await User.findById(
 				req.params.userId,
-				'email password profileImage'
+				'email password profileImage facebookId'
 			);
-			const isPasswordMatching = await bcrypt.compare(
-				password,
-				oldUser.password
-			);
+			let isPasswordMatching = false;
+
+			if (!oldUser.facebookId)
+				isPasswordMatching = await bcrypt.compare(password, oldUser.password);
 
 			if (!oldUser._id.equals(req.user._id)) {
 				if (req.file && fs.existsSync(req.file.path))
@@ -210,7 +221,7 @@ module.exports.putUpdateUser = [
 					],
 				});
 			}
-			if (!isPasswordMatching) {
+			if (!isPasswordMatching && password !== '') {
 				if (req.file && fs.existsSync(req.file.path))
 					await fsPromises.unlink(req.file.path);
 
@@ -233,7 +244,7 @@ module.exports.putUpdateUser = [
 			if (lastImage === 'keep') profileImage = oldUser.profileImage;
 			if (req.file) profileImage = req.file.filename;
 			if (
-				lastImage !== 'keep' &&
+				(req.file || lastImage !== 'keep') &&
 				oldUser.profileImage !== '' &&
 				fs.existsSync(`./public/images/users/${oldUser.profileImage}`)
 			)
@@ -241,7 +252,10 @@ module.exports.putUpdateUser = [
 					`./public/images/users/${oldUser.profileImage}`
 				);
 
-			const hashedPassword = await bcrypt.hash(newPassword || password, 10);
+			let hashedPassword = oldUser.password;
+
+			if (password !== '')
+				hashedPassword = await bcrypt.hash(newPassword || password, 10);
 
 			const updatedUserFields = {
 				email,

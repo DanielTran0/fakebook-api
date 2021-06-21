@@ -25,7 +25,9 @@ userSchema.virtual('coreDetails').get(function getCoreDetails() {
 		_id: this._id,
 		firstName: this.firstName,
 		lastName: this.lastName,
+		email: this.email,
 		profileImage: this.profileImage,
+		facebookId: this.facebookId,
 	};
 });
 

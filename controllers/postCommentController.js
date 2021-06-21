@@ -1,5 +1,5 @@
 const { body, validationResult } = require('express-validator');
-const decode = require('unescape');
+const validator = require('validator');
 const Post = require('../models/postModel');
 
 const decodeAllComments = (commentsArray) => {
@@ -7,7 +7,7 @@ const decodeAllComments = (commentsArray) => {
 	return commentsArray.map((comment) => ({
 		_id: comment._id,
 		user: comment.user,
-		text: decode(comment.text),
+		text: validator.unescape(comment.text),
 		date: comment.date,
 		likes: comment.likes,
 	}));
