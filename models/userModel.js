@@ -7,6 +7,7 @@ const userSchema = new Schema({
 	firstName: { type: String, required: true },
 	lastName: { type: String, required: true },
 	profileImage: { type: String, default: '' },
+	backgroundImage: { type: String, default: '' },
 	friends: [
 		{
 			user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
@@ -27,6 +28,7 @@ userSchema.virtual('coreDetails').get(function getCoreDetails() {
 		lastName: this.lastName,
 		email: this.email,
 		profileImage: this.profileImage,
+		backgroundImage: this.backgroundImage,
 		facebookId: this.facebookId,
 	};
 });

@@ -8,7 +8,10 @@ const upload = require('../configs/multerConfig');
 
 module.exports.getAllUsers = async (req, res, next) => {
 	try {
-		const users = await User.find({}, 'firstName lastName profileImage')
+		const users = await User.find(
+			{},
+			'firstName lastName profileImage backgroundImage'
+		)
 			.collation({ locale: 'en' })
 			.sort('lastName');
 
@@ -23,7 +26,7 @@ module.exports.getSingleUser = async (req, res, next) => {
 	try {
 		const user = await User.findById(
 			req.params.userId,
-			'firstName lastName profileImage'
+			'firstName lastName profileImage backgroundImage'
 		);
 
 		return res.json({ user: user.coreDetails });
@@ -117,16 +120,6 @@ module.exports.putUpdateUser = [
 			return next();
 		});
 	},
-	(req, res, next) => {
-		upload('backgroundImage')(req, res, (err) => {
-			if (err) {
-				res.status(400);
-				return res.json({ errors: [{ ...err, param: 'general' }] });
-			}
-
-			return next();
-		});
-	},
 	body('email', 'Invalid email format.')
 		.isEmail()
 		.trim()
@@ -166,15 +159,25 @@ module.exports.putUpdateUser = [
 		(value, { req }) => value === req.body.newPassword
 	),
 	body('lastImage').trim().escape().optional({ checkFalsy: true }),
+	body('isBackground').trim().escape().optional({ checkFalsy: true }),
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
-		const { email, firstName, lastName, password, newPassword, lastImage } =
-			req.body;
+		const {
+			email,
+			firstName,
+			lastName,
+			password,
+			newPassword,
+			lastImage,
+			isBackground,
+		} = req.body;
 
 		try {
 			if (!formErrors.isEmpty()) {
 				if (req.file && fs.existsSync(req.file.path))
 					await fsPromises.unlink(req.file.path);
+
+				console.log(req.files);
 
 				res.status(400);
 				return res.json({ user: req.body, errors: formErrors.array() });
@@ -183,7 +186,7 @@ module.exports.putUpdateUser = [
 			const isEmailUsed = await User.findOne({ email }, 'email');
 			const oldUser = await User.findById(
 				req.params.userId,
-				'email password profileImage facebookId'
+				'email password profileImage facebookId backgroundImage'
 			);
 			let isPasswordMatching = false;
 
@@ -237,6 +240,30 @@ module.exports.putUpdateUser = [
 						},
 					],
 				});
+			}
+
+			if (isBackground && !req.file) {
+				res.status(400);
+				return res.json({
+					user: req.body,
+					errors: [{ param: 'general', msg: 'Need a image file' }],
+				});
+			}
+
+			if (isBackground && req.file) {
+				if (
+					oldUser.backgroundImage &&
+					fs.existsSync(`./public/images/users/${oldUser.backgroundImage}`)
+				)
+					await fsPromises.unlink(
+						`./public/images/users/${oldUser.backgroundImage}`
+					);
+
+				await User.findByIdAndUpdate(req.params.userId, {
+					backgroundImage: req.file.filename,
+				});
+
+				return res.json({ backgroundImage: req.file.filename });
 			}
 
 			let profileImage = '';
