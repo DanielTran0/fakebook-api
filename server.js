@@ -11,6 +11,7 @@ const postLikeRouter = require('./routes/postLikeRouter');
 const postRouter = require('./routes/postRouter');
 const sessionRouter = require('./routes/sessionRouter');
 const userRouter = require('./routes/userRouter');
+const { userJoin, userLeave, getAllUsers } = require('./chatUtil');
 require('./configs/mongoConfig');
 require('./configs/passportStrategyConfig');
 require('dotenv').config();
@@ -24,16 +25,18 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) => {
-	socket.emit('welcome', `you have entered the chat, ${socket.id}`);
-
-	socket.broadcast.emit('user', `A user has joined the chat ${socket.id}`);
-
-	socket.on('disconnect', () => {
-		io.emit('user', 'A user has left the chat');
+	socket.on('joinRoom', (user) => {
+		userJoin({ ...user, id: socket.id });
+		io.emit('currentUsers', getAllUsers());
 	});
 
 	socket.on('send message', (message) => {
 		io.emit('message', message);
+	});
+
+	socket.on('disconnect', () => {
+		userLeave(socket.id);
+		io.emit('currentUsers', getAllUsers());
 	});
 });
 
