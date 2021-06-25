@@ -3,6 +3,8 @@ const createError = require('http-errors');
 const logger = require('morgan');
 const http = require('http');
 const { Server } = require('socket.io');
+const compression = require('compression');
+const helmet = require('helmet');
 
 const app = require('./configs/appConfig');
 const friendRouter = require('./routes/friendRouter');
@@ -44,6 +46,8 @@ const port = process.env.PORT || 5000;
 
 app.use(logger('dev'));
 app.use(cors());
+app.use(compression());
+app.use(helmet());
 
 app.get('/', (req, res) => {
 	res.json({ msg: 'This is a api server, use /api/resource' });
