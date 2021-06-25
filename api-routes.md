@@ -1,9 +1,9 @@
-*status 401: unauthorized (needs header { auth: bearer token })
-coreDetails = { _id, email, firstName, lastName, profileImage }
-error1 = { location, msg, param, value }
-error2 = { msg }
-status = enum: ['friends', 'incoming', 'outgoing']
-postDetails = { user, text, postImage, date, likes, comments }
+*status 401: unauthorized (needs header { auth: bearer token })  
+coreDetails = { _id, email, firstName, lastName, profileImage }  
+error1 = { location, msg, param, value }  
+error2 = { msg }  
+status = enum: ['friends', 'incoming', 'outgoing']  
+postDetails = { user, text, postImage, date, likes, comments }  
 
 User Routes
     
