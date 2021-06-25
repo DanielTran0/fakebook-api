@@ -207,9 +207,18 @@ module.exports.putUpdateUser = [
 			const isEmailUsed = await User.findOne({ email }, 'email');
 			const oldUser = await User.findById(
 				req.params.userId,
-				'email password profileImage facebookId backgroundImage'
+				'email password profileImage facebookId backgroundImage isTest'
 			);
 			let isPasswordMatching = false;
+
+			if (oldUser.isTest) {
+				res.status(400);
+				return res.json({
+					errors: [
+						{ msg: "Test User settings can't be changed", param: 'general' },
+					],
+				});
+			}
 
 			if (!oldUser.facebookId)
 				isPasswordMatching = await bcrypt.compare(password, oldUser.password);
