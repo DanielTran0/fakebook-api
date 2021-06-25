@@ -4,8 +4,8 @@ const userJoin = (user) => {
 	users.push(user);
 };
 
-const userLeave = (id) => {
-	const userIndex = users.findIndex((user) => user.id === id);
+const userLeave = (chatId) => {
+	const userIndex = users.findIndex((user) => user.chatId === chatId);
 
 	if (userIndex === -1) return null;
 

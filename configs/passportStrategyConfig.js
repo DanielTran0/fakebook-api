@@ -23,7 +23,7 @@ passport.use(
 
 				if (!isPasswordCorrect)
 					return done(null, false, {
-						msg: 'Incorrect Password (Min Length: 8, 1 Capital Letter, 1 Number).',
+						msg: 'Incorrect Password (Min Length: 5, 1 Capital Letter, 1 Number).',
 						param: 'password',
 					});
 

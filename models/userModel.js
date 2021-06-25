@@ -19,6 +19,8 @@ const userSchema = new Schema({
 		},
 	],
 	facebookId: { type: String, default: '' },
+	isAdmin: { type: Boolean, default: false },
+	isTest: { type: Boolean, default: false },
 });
 
 userSchema.virtual('coreDetails').get(function getCoreDetails() {

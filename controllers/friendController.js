@@ -164,7 +164,7 @@ module.exports.deleteUserFriendOrRequest = async (req, res, next) => {
 		if (currentUserFriendArrayIndex < 0 || friendUserFriendArrayIndex < 0) {
 			res.status(400);
 			return res.json({
-				errors: { msg: 'That user is already not a friend.' },
+				errors: [{ msg: 'That user is already not a friend.' }],
 			});
 		}
 

@@ -55,8 +55,8 @@ module.exports.postCreatedUser = [
 		.isAlpha()
 		.withMessage('Contains non-alphabetical characters.'),
 	body('password')
-		.isLength({ min: 8 })
-		.withMessage('Minimum length is 8.')
+		.isLength({ min: 5 })
+		.withMessage('Minimum length is 5.')
 		.matches('[0-9]')
 		.withMessage('Must contain a number.')
 		.matches('[A-Z]')
@@ -101,6 +101,27 @@ module.exports.postCreatedUser = [
 
 			await user.save();
 
+			const baseUsers = await User.find({
+				$or: [{ isAdmin: true }, { isTest: true }],
+			});
+
+			if (baseUsers[0]) {
+				await User.findByIdAndUpdate(baseUsers[0]._id, {
+					$push: { friends: { user: user._id, status: 'friends' } },
+				});
+				await User.findByIdAndUpdate(user._id, {
+					$push: { friends: { user: baseUsers[0]._id, status: 'friends' } },
+				});
+			}
+			if (baseUsers[1]) {
+				await User.findByIdAndUpdate(baseUsers[1]._id, {
+					$push: { friends: { user: user._id, status: 'friends' } },
+				});
+				await User.findByIdAndUpdate(user._id, {
+					$push: { friends: { user: baseUsers[1]._id, status: 'friends' } },
+				});
+			}
+
 			return res.json({ user: user.coreDetails });
 		} catch (error) {
 			return next(error);
@@ -139,16 +160,16 @@ module.exports.putUpdateUser = [
 		.isAlpha()
 		.withMessage('Contains non-alphabetical characters.'),
 	body('password')
-		.isLength({ min: 8 })
-		.withMessage('Minimum length is 8.')
+		.isLength({ min: 5 })
+		.withMessage('Minimum length is 5.')
 		.matches('[0-9]')
 		.withMessage('Must contain a number.')
 		.matches('[A-Z]')
 		.withMessage('Must contain a capital letter.')
 		.optional({ checkFalsy: true }),
 	body('newPassword')
-		.isLength({ min: 8 })
-		.withMessage('Minimum length is 8.')
+		.isLength({ min: 5 })
+		.withMessage('Minimum length is 5.')
 		.matches('[0-9]')
 		.withMessage('Must contain a number.')
 		.matches('[A-Z]')
@@ -167,10 +188,10 @@ module.exports.putUpdateUser = [
 			lastName,
 			password,
 			newPassword,
+			newPasswordConfirmation,
 			lastImage,
 			isBackground,
 		} = req.body;
-		console.log(isBackground);
 
 		try {
 			if (!formErrors.isEmpty()) {
@@ -241,12 +262,22 @@ module.exports.putUpdateUser = [
 					],
 				});
 			}
+			if (password && (!newPassword || !newPasswordConfirmation)) {
+				res.status(400);
+				return res.json({
+					user: req.body,
+					errors: [
+						{ param: 'newPassword', msg: 'Required Field' },
+						{ param: 'newPasswordConfirmation', msg: 'Required Field' },
+					],
+				});
+			}
 
 			if (!req.file && isBackground === 'true') {
 				res.status(400);
 				return res.json({
 					user: req.body,
-					errors: [{ param: 'general', msg: 'Need a image file11' }],
+					errors: [{ param: 'general', msg: 'Need a image file' }],
 				});
 			}
 

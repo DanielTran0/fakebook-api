@@ -20,13 +20,13 @@ const server = http.createServer(app);
 const io = new Server(server, {
 	// TODO change origin to frontend url
 	cors: {
-		origin: 'http://localhost:3000',
+		origin: true,
 	},
 });
 
 io.on('connection', (socket) => {
 	socket.on('joinRoom', (user) => {
-		userJoin({ ...user, id: socket.id });
+		userJoin({ ...user, chatId: socket.id });
 		io.emit('currentUsers', getAllUsers());
 	});
 
