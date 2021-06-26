@@ -1,16 +1,16 @@
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
-const fsPromises = require('fs/promises');
-const fs = require('fs');
+
+const { streamUpload, cloudinary } = require('../configs/cloudinaryConfig');
+const upload = require('../configs/multerConfig');
 const User = require('../models/userModel');
 const Post = require('../models/postModel');
-const upload = require('../configs/multerConfig');
 
 module.exports.getAllUsers = async (req, res, next) => {
 	try {
 		const users = await User.find(
 			{},
-			'firstName lastName profileImage backgroundImage'
+			'firstName lastName profileImageUrl backgroundImageUrl'
 		)
 			.collation({ locale: 'en' })
 			.sort('lastName');
@@ -26,7 +26,7 @@ module.exports.getSingleUser = async (req, res, next) => {
 	try {
 		const user = await User.findById(
 			req.params.userId,
-			'firstName lastName profileImage backgroundImage'
+			'firstName lastName profileImageUrl backgroundImageUrl'
 		);
 
 		return res.json({ user: user.coreDetails });
@@ -193,22 +193,18 @@ module.exports.putUpdateUser = [
 			lastImage,
 			isBackground,
 		} = req.body;
+		const { file } = req;
+
+		if (!formErrors.isEmpty()) {
+			res.status(400);
+			return res.json({ user: req.body, errors: formErrors.array() });
+		}
 
 		try {
-			if (!formErrors.isEmpty()) {
-				if (req.file && fs.existsSync(req.file.path))
-					await fsPromises.unlink(req.file.path);
-
-				console.log(req.files);
-
-				res.status(400);
-				return res.json({ user: req.body, errors: formErrors.array() });
-			}
-
 			const isEmailUsed = await User.findOne({ email }, 'email');
 			const oldUser = await User.findById(
 				req.params.userId,
-				'email password profileImage facebookId backgroundImage isTest'
+				'email password facebookId profileImage profileImageUrl backgroundImage backgroundImageUrl isTest'
 			);
 			let isPasswordMatching = false;
 
@@ -220,14 +216,9 @@ module.exports.putUpdateUser = [
 					],
 				});
 			}
-
 			if (!oldUser.facebookId)
 				isPasswordMatching = await bcrypt.compare(password, oldUser.password);
-
 			if (!oldUser._id.equals(req.user._id)) {
-				if (req.file && fs.existsSync(req.file.path))
-					await fsPromises.unlink(req.file.path);
-
 				res.status(400);
 				return res.json({
 					errors: [
@@ -239,9 +230,6 @@ module.exports.putUpdateUser = [
 				});
 			}
 			if (isEmailUsed && oldUser.email !== email) {
-				if (req.file && fs.existsSync(req.file.path))
-					await fsPromises.unlink(req.file.path);
-
 				res.status(400);
 				return res.json({
 					user: req.body,
@@ -256,9 +244,6 @@ module.exports.putUpdateUser = [
 				});
 			}
 			if (!isPasswordMatching && password !== '') {
-				if (req.file && fs.existsSync(req.file.path))
-					await fsPromises.unlink(req.file.path);
-
 				res.status(400);
 				return res.json({
 					user: req.body,
@@ -283,7 +268,7 @@ module.exports.putUpdateUser = [
 				});
 			}
 
-			if (!req.file && isBackground === 'true') {
+			if (!file && isBackground === 'true') {
 				res.status(400);
 				return res.json({
 					user: req.body,
@@ -291,34 +276,38 @@ module.exports.putUpdateUser = [
 				});
 			}
 
-			if (isBackground === 'true' && req.file) {
-				if (
-					oldUser.backgroundImage &&
-					fs.existsSync(`./public/images/users/${oldUser.backgroundImage}`)
-				)
-					await fsPromises.unlink(
-						`./public/images/users/${oldUser.backgroundImage}`
-					);
+			if (isBackground === 'true' && file) {
+				if (oldUser.backgroundImage)
+					await cloudinary.uploader.destroy(oldUser.backgroundImage);
+
+				const cloudinaryBackgroundResponse = await streamUpload(req);
 
 				await User.findByIdAndUpdate(req.params.userId, {
-					backgroundImage: req.file.filename,
+					backgroundImage: cloudinaryBackgroundResponse.public_id,
+					backgroundImageUrl: cloudinaryBackgroundResponse.secure_url,
 				});
 
-				return res.json({ backgroundImage: req.file.filename });
+				return res.json({
+					backgroundImageUrl: cloudinaryBackgroundResponse.secure_url,
+				});
 			}
 
+			let cloudinaryResponse = null;
 			let profileImage = '';
+			let profileImageUrl = '';
 
-			if (lastImage === 'keep') profileImage = oldUser.profileImage;
-			if (req.file) profileImage = req.file.filename;
-			if (
-				(req.file || lastImage !== 'keep') &&
-				oldUser.profileImage !== '' &&
-				fs.existsSync(`./public/images/users/${oldUser.profileImage}`)
-			)
-				await fsPromises.unlink(
-					`./public/images/users/${oldUser.profileImage}`
-				);
+			if (lastImage === 'keep') {
+				profileImage = oldUser.profileImage;
+				profileImageUrl = oldUser.profileImageUrl;
+			}
+			if (file) {
+				cloudinaryResponse = await streamUpload(req);
+
+				profileImage = cloudinaryResponse.public_id;
+				profileImageUrl = cloudinaryResponse.secure_url;
+			}
+			if ((file || lastImage !== 'keep') && oldUser.profileImage !== '')
+				await cloudinary.uploader.destroy(oldUser.profileImage);
 
 			let hashedPassword = oldUser.password;
 
@@ -331,6 +320,7 @@ module.exports.putUpdateUser = [
 				lastName,
 				password: hashedPassword,
 				profileImage,
+				profileImageUrl,
 			};
 
 			await User.findByIdAndUpdate(req.params.userId, updatedUserFields);
@@ -344,6 +334,7 @@ module.exports.putUpdateUser = [
 	},
 ];
 
+// TODO
 module.exports.deleteUser = [
 	body('password')
 		.isLength({ min: 8 })
@@ -404,27 +395,27 @@ module.exports.deleteUser = [
 				});
 			}
 
-			const allPosts = await Post.find({ user: user._id }, 'postImage');
-			const allPostsWithImages = allPosts.filter(
-				(post) => post.postImage !== ''
-			);
-			allPostsWithImages.forEach(async (post) => {
-				if (fs.existsSync(`./public/images/posts/${post.postImage}`))
-					await fsPromises.unlink(`./public/images/posts/${post.postImage}`);
-			});
+			// const allPosts = await Post.find({ user: user._id }, 'postImage');
+			// const allPostsWithImages = allPosts.filter(
+			// 	(post) => post.postImage !== ''
+			// );
+			// allPostsWithImages.forEach(async (post) => {
+			// 	if (fs.existsSync(`./public/images/posts/${post.postImage}`))
+			// 		await fsPromises.unlink(`./public/images/posts/${post.postImage}`);
+			// });
 
-			if (
-				user.profileImage !== '' &&
-				fs.existsSync(`./public/images/users/${user.profileImage}`)
-			)
-				await fsPromises.unlink(`./public/images/users/${user.profileImage}`);
-			if (
-				user.backgroundImage !== '' &&
-				fs.existsSync(`./public/images/users/${user.backgroundImage}`)
-			)
-				await fsPromises.unlink(
-					`./public/images/users/${user.backgroundImage}`
-				);
+			// if (
+			// 	user.profileImage !== '' &&
+			// 	fs.existsSync(`./public/images/users/${user.profileImage}`)
+			// )
+			// 	await fsPromises.unlink(`./public/images/users/${user.profileImage}`);
+			// if (
+			// 	user.backgroundImage !== '' &&
+			// 	fs.existsSync(`./public/images/users/${user.backgroundImage}`)
+			// )
+			// 	await fsPromises.unlink(
+			// 		`./public/images/users/${user.backgroundImage}`
+			// 	);
 
 			await Post.updateMany(
 				{
