@@ -1,11 +1,10 @@
 const { body, validationResult } = require('express-validator');
 const validator = require('validator');
-const fsPromises = require('fs/promises');
-const fs = require('fs');
 
+const { streamUpload, cloudinary } = require('../configs/cloudinaryConfig');
+const upload = require('../configs/multerConfig');
 const Post = require('../models/postModel');
 const User = require('../models/userModel');
-const upload = require('../configs/multerConfig');
 
 const getPostCoreDetails = (postsArray) => {
 	if (postsArray.length === 0) return [];
@@ -46,8 +45,8 @@ module.exports.getAllPosts = async (req, res, next) => {
 			.limit(10)
 			.sort({ date: 'desc' })
 			.skip(Number(req.query.skip))
-			.populate('user', 'firstName lastName profileImage')
-			.populate('comments.user', 'firstName lastName profileImage')
+			.populate('user', 'firstName lastName profileImageUrl')
+			.populate('comments.user', 'firstName lastName profileImageUrl')
 			.populate('likes.user', 'firstName lastName');
 
 		return res.json({ posts: decodePostsText(getPostCoreDetails(posts)) });
@@ -56,13 +55,14 @@ module.exports.getAllPosts = async (req, res, next) => {
 	}
 };
 
+// TODO skip
 module.exports.getPost = async (req, res, next) => {
 	try {
 		const posts = await Post.find({ user: req.params.userId })
 			.sort({ date: 'desc' })
 			.limit(10)
-			.populate('user', 'firstName lastName profileImage')
-			.populate('comments.user', 'firstName lastName profileImage')
+			.populate('user', 'firstName lastName profileImageUrl')
+			.populate('comments.user', 'firstName lastName profileImageUrl')
 			.populate('likes.user', 'firstName lastName');
 
 		return res.json({ posts: decodePostsText(getPostCoreDetails(posts)) });
@@ -85,14 +85,22 @@ module.exports.postCreatedPost = [
 	body('text').trim().escape().optional({ nullable: true }),
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
-		const { text } = req.body;
+		const {
+			file,
+			user,
+			body: { text },
+		} = req;
 
-		if (!req.file && !text) {
+		if (!formErrors.isEmpty()) {
+			res.status(400);
+			return res.json({ post: req.body, errors: formErrors.array() });
+		}
+		if (!file && !text) {
 			res.status(400);
 			return res.json({
 				errors: [
 					{
-						msg: 'Need either text or an image to create post.',
+						msg: 'Need either text or an image to create a post.',
 						param: 'general',
 					},
 				],
@@ -100,27 +108,22 @@ module.exports.postCreatedPost = [
 		}
 
 		try {
-			if (!formErrors.isEmpty()) {
-				if (req.file && fs.existsSync(req.file.path))
-					await fsPromises.unlink(req.file.path);
+			let cloudinaryResponse = null;
 
-				res.status(400);
-				return res.json({ post: req.body, errors: formErrors.array() });
-			}
+			if (file) cloudinaryResponse = await streamUpload(req);
 
 			const post = new Post({
 				text,
-				user: req.user._id,
-				postImage: req.file?.filename || '',
-				likes: [],
-				comments: [],
+				user: user._id,
+				postImage: cloudinaryResponse?.public_id || '',
+				postImageUrl: cloudinaryResponse?.secure_url || '',
 			});
 
 			await post.save();
 
 			const newPost = await Post.findById(post._id).populate(
 				'user',
-				'firstName lastName profileImage'
+				'firstName lastName profileImageUrl'
 			);
 
 			return res.json({
@@ -150,22 +153,27 @@ module.exports.putUpdatePost = [
 	body('lastImage').trim().escape().optional({ nullable: true }),
 	async (req, res, next) => {
 		const formErrors = validationResult(req);
-		const { text, lastImage } = req.body;
+		const {
+			file,
+			user,
+			body: { text, lastImage },
+		} = req;
+
+		if (!formErrors.isEmpty()) {
+			res.status(400);
+			return res.json({ post: req.body, errors: formErrors.array() });
+		}
 
 		try {
-			if (!formErrors.isEmpty()) {
-				if (req.file && fs.existsSync(req.file.path))
-					await fsPromises.unlink(req.file.path);
-
-				res.status(400);
-				return res.json({ post: req.body, errors: formErrors.array() });
-			}
-
-			const oldPost = await Post.findById(req.params.postId, 'user postImage');
+			const oldPost = await Post.findById(
+				req.params.postId,
+				'user postImage postImageUrl'
+			);
+			const { postImage, postImageUrl, user: postUser } = oldPost;
 
 			if (
-				(!text && !req.file && !oldPost.postImage) ||
-				(!text && !req.file && oldPost.postImage && lastImage !== 'keep')
+				(!text && !file && !postImage) ||
+				(!text && !file && postImage && lastImage !== 'keep')
 			) {
 				res.status(400);
 				return res.json({
@@ -177,11 +185,7 @@ module.exports.putUpdatePost = [
 					],
 				});
 			}
-
-			if (!oldPost.user.equals(req.user._id)) {
-				if (req.file && fs.existsSync(req.file.path))
-					await fsPromises.unlink(req.file.path);
-
+			if (!postUser.equals(user._id)) {
 				res.status(400);
 				return res.json({
 					errors: [
@@ -193,27 +197,33 @@ module.exports.putUpdatePost = [
 				});
 			}
 
-			let postImage = '';
+			let cloudinaryResponse = null;
+			let newPostImage = '';
+			let newPostImageUrl = '';
 
-			if (lastImage === 'keep') postImage = oldPost.postImage;
-			if (req.file) postImage = req.file.filename;
-			if (
-				(req.file || lastImage !== 'keep') &&
-				oldPost.postImage !== '' &&
-				fs.existsSync(`./public/images/posts/${oldPost.postImage}`)
-			)
-				await fsPromises.unlink(`./public/images/posts/${oldPost.postImage}`);
+			if (lastImage === 'keep') {
+				newPostImage = postImage;
+				newPostImageUrl = postImageUrl;
+			}
+			if (file) {
+				cloudinaryResponse = await streamUpload(req);
+				newPostImage = cloudinaryResponse.public_id;
+				newPostImageUrl = cloudinaryResponse.secure_url;
+			}
+			if ((file || lastImage !== 'keep') && postImage !== '')
+				await cloudinary.uploader.destroy(postImage);
 
 			const updatedPostFields = {
 				text,
-				postImage,
+				postImage: newPostImage,
+				postImageUrl: newPostImageUrl,
 			};
 
 			await Post.findByIdAndUpdate(req.params.postId, updatedPostFields);
 
 			const updatedPost = await Post.findById(req.params.postId)
-				.populate('user', 'firstName lastName profileImage')
-				.populate('comments.user', 'firstName lastName profileImage')
+				.populate('user', 'firstName lastName profileImageUrl')
+				.populate('comments.user', 'firstName lastName profileImageUrl')
 				.populate('likes.user', 'firstName lastName');
 
 			return res.json({
@@ -231,6 +241,7 @@ module.exports.putUpdatePost = [
 module.exports.deletePost = async (req, res, next) => {
 	try {
 		const oldPost = await Post.findById(req.params.postId);
+		const { postImage, user: postUser } = oldPost;
 
 		if (!oldPost) {
 			res.status(400);
@@ -238,8 +249,7 @@ module.exports.deletePost = async (req, res, next) => {
 				errors: [{ msg: 'There is no post to delete.', param: 'general' }],
 			});
 		}
-
-		if (!oldPost.user.equals(req.user._id)) {
+		if (!postUser.equals(req.user._id)) {
 			res.status(400);
 			return res.json({
 				errors: [
@@ -250,12 +260,7 @@ module.exports.deletePost = async (req, res, next) => {
 				],
 			});
 		}
-
-		if (
-			oldPost.postImage !== '' &&
-			fs.existsSync(`./public/images/posts/${oldPost.postImage}`)
-		)
-			await fsPromises.unlink(`./public/images/posts/${oldPost.postImage}`);
+		if (postImage !== '') await cloudinary.uploader.destroy(postImage);
 
 		await Post.findByIdAndDelete(req.params.postId);
 

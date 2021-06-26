@@ -5,6 +5,7 @@ const postSchema = new Schema({
 	user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
 	text: { type: String, default: '' },
 	postImage: { type: String },
+	postImageUrl: { type: String },
 	date: { type: Date, default: Date.now },
 	likes: [
 		{
@@ -30,7 +31,7 @@ postSchema.virtual('coreDetails').get(function getCoreDetails() {
 		_id: this._id,
 		user: this.user,
 		text: this.text,
-		postImage: this.postImage,
+		postImageUrl: this.postImageUrl,
 		date: this.date,
 		likes: this.likes,
 		comments: this.comments,
