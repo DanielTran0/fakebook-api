@@ -33,7 +33,7 @@ module.exports.postComment = [
 			const updatedPost = await Post.findById(
 				req.params.postId,
 				'comments'
-			).populate('comments.user', 'firstName lastName profileImage');
+			).populate('comments.user', 'firstName lastName profileImageUrl');
 
 			return res.json({
 				post: {
@@ -96,7 +96,7 @@ module.exports.putChangeComment = [
 
 			const updatedPost = await Post.findById(postId, 'comments').populate(
 				'comments.user',
-				'firstName lastName profileImage'
+				'firstName lastName profileImageUrl'
 			);
 
 			return res.json({
@@ -125,7 +125,7 @@ module.exports.deleteComment = [
 		try {
 			const post = await Post.findById(postId, 'comments').populate(
 				'comments.user',
-				'firstName lastName profileImage'
+				'firstName lastName profileImageUrl'
 			);
 
 			const postCommentIndex = post.comments.findIndex((comment) =>
