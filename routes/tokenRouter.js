@@ -1,5 +1,5 @@
 const express = require('express');
-const sessionController = require('../controllers/sessionController');
+const sessionController = require('../controllers/tokenController');
 const authenticateRoute = require('../configs/passportAuthenticate');
 
 const router = express.Router();

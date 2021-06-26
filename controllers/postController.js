@@ -2,6 +2,7 @@ const { body, validationResult } = require('express-validator');
 const validator = require('validator');
 const fsPromises = require('fs/promises');
 const fs = require('fs');
+
 const Post = require('../models/postModel');
 const User = require('../models/userModel');
 const upload = require('../configs/multerConfig');
@@ -258,7 +259,6 @@ module.exports.deletePost = async (req, res, next) => {
 
 		await Post.findByIdAndDelete(req.params.postId);
 
-		// TODO send succuss message instead
 		const updatedPosts = await Post.find({ user: req.user._id });
 
 		return res.json({

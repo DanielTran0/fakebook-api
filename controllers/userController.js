@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const fsPromises = require('fs/promises');
 const fs = require('fs');
 const User = require('../models/userModel');
+const Post = require('../models/postModel');
 const upload = require('../configs/multerConfig');
 
 module.exports.getAllUsers = async (req, res, next) => {
@@ -343,118 +344,118 @@ module.exports.putUpdateUser = [
 	},
 ];
 
-// module.exports.deleteUser = [
-// 	body('password')
-// 		.isLength({ min: 8 })
-// 		.withMessage('Minimum length is 8.')
-// 		.matches('[0-9]')
-// 		.withMessage('Must contain a number.')
-// 		.matches('[A-Z]')
-// 		.withMessage('Must contain a capital letter.')
-// 		.optional({ checkFalsy: true }),
-// 	async (req, res, next) => {
-// 		const formErrors = validationResult(req);
-// 		const { password } = req.body;
+module.exports.deleteUser = [
+	body('password')
+		.isLength({ min: 8 })
+		.withMessage('Minimum length is 8.')
+		.matches('[0-9]')
+		.withMessage('Must contain a number.')
+		.matches('[A-Z]')
+		.withMessage('Must contain a capital letter.')
+		.optional({ checkFalsy: true }),
+	async (req, res, next) => {
+		const formErrors = validationResult(req);
+		const { password } = req.body;
 
-// 		if (!formErrors.isEmpty()) {
-// 			res.status(400);
-// 			return res.json({ user: req.body, errors: formErrors.array() });
-// 		}
+		if (!formErrors.isEmpty()) {
+			res.status(400);
+			return res.json({ user: req.body, errors: formErrors.array() });
+		}
 
-// 		try {
-// 			const user = await User.findById(
-// 				req.user._id,
-// 				'password profileImage facebookId backgroundImage'
-// 			);
+		try {
+			const user = await User.findById(
+				req.user._id,
+				'password profileImage facebookId backgroundImage'
+			);
 
-// 			if (user.facebookId === '' && !password) {
-// 				res.status(400);
-// 				return res.json({
-// 					user: req.body,
-// 					errors: [
-// 						{
-// 							location: 'body',
-// 							msg: 'Need to enter password to delete account.',
-// 							param: 'password',
-// 							value: password,
-// 						},
-// 					],
-// 				});
-// 			}
+			if (user.facebookId === '' && !password) {
+				res.status(400);
+				return res.json({
+					user: req.body,
+					errors: [
+						{
+							location: 'body',
+							msg: 'Need to enter password to delete account.',
+							param: 'password',
+							value: password,
+						},
+					],
+				});
+			}
 
-// 			let isPasswordMatching = false;
+			let isPasswordMatching = false;
 
-// 			if (user.facebookId !== '') isPasswordMatching = true;
-// 			if (user.facebookId === '')
-// 				isPasswordMatching = await bcrypt.compare(password, user.password);
+			if (user.facebookId !== '') isPasswordMatching = true;
+			if (user.facebookId === '')
+				isPasswordMatching = await bcrypt.compare(password, user.password);
 
-// 			if (!isPasswordMatching) {
-// 				res.status(400);
-// 				return res.json({
-// 					user: req.body,
-// 					errors: [
-// 						{
-// 							location: 'body',
-// 							msg: 'Incorrect original password.',
-// 							param: 'password',
-// 							value: password,
-// 						},
-// 					],
-// 				});
-// 			}
+			if (!isPasswordMatching) {
+				res.status(400);
+				return res.json({
+					user: req.body,
+					errors: [
+						{
+							location: 'body',
+							msg: 'Incorrect original password.',
+							param: 'password',
+							value: password,
+						},
+					],
+				});
+			}
 
-// 			const allPosts = await Post.find({ user: user._id }, 'postImage');
-// 			const allPostsWithImages = allPosts.filter(
-// 				(post) => post.postImage !== ''
-// 			);
-// 			allPostsWithImages.forEach(async (post) => {
-// 				if (fs.existsSync(`./public/images/posts/${post.postImage}`))
-// 					await fsPromises.unlink(`./public/images/posts/${post.postImage}`);
-// 			});
+			const allPosts = await Post.find({ user: user._id }, 'postImage');
+			const allPostsWithImages = allPosts.filter(
+				(post) => post.postImage !== ''
+			);
+			allPostsWithImages.forEach(async (post) => {
+				if (fs.existsSync(`./public/images/posts/${post.postImage}`))
+					await fsPromises.unlink(`./public/images/posts/${post.postImage}`);
+			});
 
-// 			if (
-// 				user.profileImage !== '' &&
-// 				fs.existsSync(`./public/images/users/${user.profileImage}`)
-// 			)
-// 				await fsPromises.unlink(`./public/images/users/${user.profileImage}`);
-// 			if (
-// 				user.backgroundImage !== '' &&
-// 				fs.existsSync(`./public/images/users/${user.backgroundImage}`)
-// 			)
-// 				await fsPromises.unlink(
-// 					`./public/images/users/${user.backgroundImage}`
-// 				);
+			if (
+				user.profileImage !== '' &&
+				fs.existsSync(`./public/images/users/${user.profileImage}`)
+			)
+				await fsPromises.unlink(`./public/images/users/${user.profileImage}`);
+			if (
+				user.backgroundImage !== '' &&
+				fs.existsSync(`./public/images/users/${user.backgroundImage}`)
+			)
+				await fsPromises.unlink(
+					`./public/images/users/${user.backgroundImage}`
+				);
 
-// 			await Post.updateMany(
-// 				{
-// 					'comments.user': user._id,
-// 				},
-// 				{ $pull: { comments: { user: user._id } } }
-// 			);
-// 			// await Post.updateMany(
-// 			// 	{
-// 			// 		'comments.likes.user': user._id,
-// 			// 	},
-// 			// 	{ $pull: { 'comments.likes.user': { user: user._id } } }
-// 			// );
-// 			await Post.updateMany(
-// 				{
-// 					'likes.user': user._id,
-// 				},
-// 				{ $pull: { likes: { user: user._id } } }
-// 			);
-// 			await Post.remove({ user: user._id });
-// 			await User.updateMany(
-// 				{
-// 					'friends.user': user._id,
-// 				},
-// 				{ $pull: { friends: { user: user._id } } }
-// 			);
-// 			await User.remove({ _id: user._id });
+			await Post.updateMany(
+				{
+					'comments.user': user._id,
+				},
+				{ $pull: { comments: { user: user._id } } }
+			);
+			await Post.updateMany(
+				{
+					'comments.likes.user': user._id,
+				},
+				{ $pull: { 'comments.likes.user': { user: user._id } } }
+			);
+			await Post.updateMany(
+				{
+					'likes.user': user._id,
+				},
+				{ $pull: { likes: { user: user._id } } }
+			);
+			await Post.remove({ user: user._id });
+			await User.updateMany(
+				{
+					'friends.user': user._id,
+				},
+				{ $pull: { friends: { user: user._id } } }
+			);
+			await User.remove({ _id: user._id });
 
-// 			return res.json({ message: 'successful delete' });
-// 		} catch (error) {
-// 			return next(error);
-// 		}
-// 	},
-// ];
+			return res.json({ message: 'successful delete' });
+		} catch (error) {
+			return next(error);
+		}
+	},
+];

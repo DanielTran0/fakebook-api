@@ -11,11 +11,12 @@ const friendRouter = require('./routes/friendRouter');
 const postCommentRouter = require('./routes/postCommentRouter');
 const postLikeRouter = require('./routes/postLikeRouter');
 const postRouter = require('./routes/postRouter');
-const sessionRouter = require('./routes/sessionRouter');
+const tokenRouter = require('./routes/tokenRouter');
 const userRouter = require('./routes/userRouter');
 const { userJoin, userLeave, getAllUsers } = require('./chatUtil');
 require('./configs/mongoConfig');
 require('./configs/passportStrategyConfig');
+require('./configs/cloudinaryConfig');
 require('dotenv').config();
 
 const server = http.createServer(app);
@@ -57,7 +58,7 @@ app.use('/api/friends', friendRouter);
 app.use('/api/comments', postCommentRouter);
 app.use('/api/likes', postLikeRouter);
 app.use('/api/posts', postRouter);
-app.use('/api/sessions', sessionRouter);
+app.use('/api/tokens', tokenRouter);
 app.use('/api/users', userRouter);
 
 app.use((req, res, next) => {
