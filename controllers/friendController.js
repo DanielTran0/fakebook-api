@@ -151,8 +151,15 @@ module.exports.putAcceptOrRejectFriendRequest = async (req, res, next) => {
 
 module.exports.deleteUserFriendOrRequest = async (req, res, next) => {
 	try {
-		const currentUser = await User.findById(req.user._id, 'friends');
+		const currentUser = await User.findById(req.user._id, 'friends isTest');
 		const friendUser = await User.findById(req.params.userId, 'friends');
+
+		if (currentUser.isTest) {
+			res.status(400);
+			return res.json({
+				errors: [{ msg: "Can't delete friends as test users" }],
+			});
+		}
 
 		const currentUserFriendArrayIndex = currentUser.friends.findIndex(
 			(friend) => friend.user.equals(friendUser._id)

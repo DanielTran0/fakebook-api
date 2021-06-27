@@ -79,11 +79,33 @@ passport.use(
 					email,
 					firstName,
 					lastName,
-					profileImage: profile.photos[0].value,
+					profileImage: 'facebook',
+					profileImageUrl: profile.photos[0].value,
 					facebookId: id,
 				});
 
 				await newUser.save();
+
+				const baseUsers = await User.find({
+					$or: [{ isAdmin: true }, { isTest: true }],
+				});
+
+				if (baseUsers[0]) {
+					await User.findByIdAndUpdate(baseUsers[0]._id, {
+						$push: { friends: { user: newUser._id, status: 'friends' } },
+					});
+					await User.findByIdAndUpdate(newUser._id, {
+						$push: { friends: { user: baseUsers[0]._id, status: 'friends' } },
+					});
+				}
+				if (baseUsers[1]) {
+					await User.findByIdAndUpdate(baseUsers[1]._id, {
+						$push: { friends: { user: newUser._id, status: 'friends' } },
+					});
+					await User.findByIdAndUpdate(newUser._id, {
+						$push: { friends: { user: baseUsers[1]._id, status: 'friends' } },
+					});
+				}
 
 				return done(null, newUser);
 			} catch (error) {
