@@ -7,7 +7,7 @@ This is the RESTful API used for the MERN stack site [fakebook](https://fakebook
 
 ## API Routes
 
-The resources provided are users, friends, posts, comments, likes and tokens. All but likes and tokens support all 4 CRUD operations. A snippet of the requirements for a get request on a specific user is:
+The resources provided are users, friends, posts, comments, likes and tokens. Everything, but likes and tokens support all CRUD operations. A snippet of the requirements for a GET request on a specific user is:
 
     Server Site: https://fakebook-api-daniel-tran.herokuapp.com/
     
@@ -20,12 +20,12 @@ The resources provided are users, friends, posts, comments, likes and tokens. Al
         Fail:
           status:500
 
-For all the [routes](api-routes.md). This is no longer 100% accurate as it was mainly maintained at the beginning of the front end development, but it covers all the bases and generally has what is required and what will be given for each route.
+You can check out the rest of the routes [here](api-routes.md). This is no longer 100% accurate as it wasn't maintained throughout development, but it covers all the bases and generally has what is required and what will be given for each route.
 
 
 ## Authentication
 
-Uses [Passport.js](http://www.passportjs.org/) and 3 passport strategies for route authentication. They are [local](http://www.passportjs.org/packages/passport-local/), [JSON Web Tokens](http://www.passportjs.org/packages/passport-jwt/) (JWT) and [Facebook tokens](https://www.npmjs.com/package/passport-facebook-token). The local strategy is used to verify the email and password in MongoDB, [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken) will then sign it with the user id as the payload and pass a JWT to the client. The Facebook strategy verifies a token given by Facebook and creates a user with their Facebook profile if no one is found within the database.
+Uses [Passport.js](http://www.passportjs.org/) and 3 passport strategies for route authentication. They are [local](http://www.passportjs.org/packages/passport-local/), [JWT](http://www.passportjs.org/packages/passport-jwt/) and [Facebook tokens](https://www.npmjs.com/package/passport-facebook-token). The local strategy is used to verify the email and password in MongoDB, [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken) will then sign it with the user id as the payload and pass a JWT to the client. Then for incoming request, JWT will check its authorization header for a bearer token and verify the user. The Facebook strategy does the same, but verifies a token given by Facebook and creates a user with their Facebook profile if no one is found within the database.
 
 * Passport
 * Passport-local  
@@ -35,7 +35,7 @@ Uses [Passport.js](http://www.passportjs.org/) and 3 passport strategies for rou
 
 ## Database & File Storage
 
-Uses MongoDB to store all user data and [Mongoose](https://github.com/Automattic/mongoose) to perform all the Create, Read, Update and Delete (CRUD) operations on the documents. For images [Multer](https://github.com/expressjs/multer) is used to read the image files into memory and the buffer is sent to [Cloudinary](https://github.com/cloudinary/cloudinary_npm) for storage.
+Uses MongoDB to store all user data and [Mongoose](https://github.com/Automattic/mongoose) to perform all the CRUD operations on the documents. For images [Multer](https://github.com/expressjs/multer) is used to read the image files into memory and the buffer is streamed to [Cloudinary](https://github.com/cloudinary/cloudinary_npm) for storage.
 
 * MongoDB
 * Mongoose  
@@ -44,14 +44,20 @@ Uses MongoDB to store all user data and [Mongoose](https://github.com/Automattic
 
 ## Data Handing 
 
-Uses [Bcrypt](https://www.npmjs.com/package/bcrypt) to hash and compare user passwords. [Express-validator](https://express-validator.github.io/docs/) to sanitize and validate client form data.
+Uses [Bcrypt](https://www.npmjs.com/package/bcrypt) to hash and compare user passwords. [Express-validator](https://express-validator.github.io/docs/) to sanitize, escape and validate client form data.
 
 * Bcrypt
 * Express-validator
 
+## Real Time
+
+Uses [Socket.IO](https://socket.io/) for real time chat between fakebook users. 
+ 
+* Socket.IO
+
 ## Testing
 
-Uses [Jest](https://jestjs.io/) as the testing framework with [Mongo Memory Server](https://github.com/nodkz/mongodb-memory-server) which creates and destroys a MongoDB sever for each test suite and [SuperTest](https://www.npmjs.com/package/supertest) to make HTTP requests. The tests can be found [here](tests).
+Uses [Jest](https://jestjs.io/) as the testing framework with [Mongo Memory Server](https://github.com/nodkz/mongodb-memory-server) to simulate a MongoDB sever for each test suite and [SuperTest](https://www.npmjs.com/package/supertest) to make HTTP requests for the routes. The tests can be found [here](tests).
 
 * Jest
 * Mongo Memory Server  
